@@ -1,4 +1,4 @@
-.PHONY: build test help dev
+.PHONY: build test help dev run
 
 # Python interpreter
 PYTHON := python3
@@ -19,3 +19,6 @@ dev:
 
 test: dev
 	$(PYTEST) -v
+
+run:
+	$(PYTHON) main.py
