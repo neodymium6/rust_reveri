@@ -352,6 +352,79 @@ impl Board {
             panic!("Invalid pass");
         }
     }
+
+    fn is_pass(&self) -> bool {
+        self.get_legal_moves() == 0
+    }
+
+    fn is_game_over(&self) -> bool {
+        let opponent_board = Board {
+            player_board: self.opponent_board,
+            opponent_board: self.player_board,
+            turn: match self.turn {
+                Turn::Black => Turn::White,
+                Turn::White => Turn::Black,
+            },
+        };
+        self.is_pass() && opponent_board.is_pass()
+    }
+
+    fn is_win(&self) -> bool {
+        if self.is_game_over() {
+            self.player_piece_num() > self.opponent_piece_num()
+        } else {
+            panic!("Game is not over yet");
+        }
+    }
+
+    fn is_lose(&self) -> bool {
+        if self.is_game_over() {
+            self.player_piece_num() < self.opponent_piece_num()
+        } else {
+            panic!("Game is not over yet");
+        }
+    }
+
+    fn is_draw(&self) -> bool {
+        if self.is_game_over() {
+            self.player_piece_num() == self.opponent_piece_num()
+        } else {
+            panic!("Game is not over yet");
+        }
+    }
+
+    fn is_black_win(&self) -> bool {
+        if self.is_game_over() {
+            self.black_piece_num() > self.white_piece_num()
+        } else {
+            panic!("Game is not over yet");
+        }
+    }
+
+    fn is_white_win(&self) -> bool {
+        if self.is_game_over() {
+            self.black_piece_num() < self.white_piece_num()
+        } else {
+            panic!("Game is not over yet");
+        }
+    }
+
+    fn get_winner(&self) -> Option<Turn> {
+        if self.is_game_over() {
+            if self.is_win() {
+                return Some(self.turn);
+            } else if self.is_lose() {
+                return match self.turn {
+                    Turn::Black => Some(Turn::White),
+                    Turn::White => Some(Turn::Black),
+                };
+            } else {
+                return None;
+            }
+        } else {
+            panic!("Game is not over yet");
+        }
+    }
 }
 
 /// A Python module implemented in Rust.
