@@ -105,3 +105,53 @@ def test_get_legal_moves():
     board.set_board_str(board_str_t, Turn.Black)
     legal_moves_t = [9, 10, 11, 12, 25, 26, 33, 41, 49]
     assert board.get_legal_moves_vec() == legal_moves_t
+
+
+def test_do_move():
+    board = Board()
+    board_str = "{}{}{}{}{}{}{}{}".format(
+        "--------",
+        "--------",
+        "--OOO---",
+        "---OXX--",
+        "--OOXX--",
+        "--OX----",
+        "--------",
+        "--------",
+    )
+    turn = Turn.White
+    board.set_board_str(board_str, turn)
+    board.do_move(21)
+    board_str_t = "{}{}{}{}{}{}{}{}".format(
+        "--------",
+        "--------",
+        "--OOOO--",
+        "---OOX--",
+        "--OOXX--",
+        "--OX----",
+        "--------",
+        "--------",
+    )
+    board_t = Board()
+    board_t.set_board_str(board_str_t, Turn.Black)
+    assert board.get_board() == board_t.get_board()
+
+
+def test_do_pass():
+    board = Board()
+    board_str = "{}{}{}{}{}{}{}{}".format(
+        "--------",
+        "--------",
+        "--OOO---",
+        "---OOO--",
+        "--OOOO--",
+        "--OO----",
+        "---O----",
+        "---X----",
+    )
+    turn = Turn.White
+    board.set_board_str(board_str, turn)
+    board.do_pass()
+    board_t = Board()
+    board_t.set_board_str(board_str, Turn.Black)
+    assert board.get_board() == board_t.get_board()

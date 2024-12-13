@@ -1,3 +1,5 @@
+use std::mem::swap;
+
 use pyo3::prelude::*;
 
 const BOARD_SIZE: usize = 8;
@@ -216,6 +218,139 @@ impl Board {
             }
         }
         legal_moves_vec
+    }
+
+    fn is_legal_move(&self, pos: usize) -> bool {
+        let pos = Board::pos2bit(pos);
+        self.get_legal_moves() & pos != 0
+    }
+
+    fn reverse(&mut self, pos: u64) {
+        let mut reversed: u64 = 0;
+        let mut mask: u64;
+        let mut tmp: u64;
+        // mask is position that exists opponent's stone to reverse from piece on each direction
+        // tmp is position of stones to reverse if piece exists on the end of stones to reverse
+        // left
+        const MASK_LEFT: u64 = 0xFE_FE_FE_FE_FE_FE_FE_FE;
+        mask = MASK_LEFT & (pos << 1);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_LEFT & (mask << 1);
+        }
+        if (mask & self.player_board) != 0 {
+            // if self.player_board exists on the end of stones to reverse
+            reversed |= tmp;
+        }
+        // right
+        const MASK_RIGHT: u64 = 0x7F_7F_7F_7F_7F_7F_7F_7F;
+        mask = MASK_RIGHT & (pos >> 1);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_RIGHT & (mask >> 1);
+        }
+        if (mask & self.player_board) != 0 {
+            reversed |= tmp;
+        }
+        // up
+        const MASK_UP: u64 = 0xFF_FF_FF_FF_FF_FF_FF_00;
+        mask = MASK_UP & (pos << 8);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_UP & (mask << 8);
+        }
+        if (mask & self.player_board) != 0 {
+            reversed |= tmp;
+        }
+        // down
+        const MASK_DOWN: u64 = 0x00_FF_FF_FF_FF_FF_FF_FF;
+        mask = MASK_DOWN & (pos >> 8);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_DOWN & (mask >> 8);
+        }
+        if (mask & self.player_board) != 0 {
+            reversed |= tmp;
+        }
+        // upper left
+        const MASK_UPPER_LEFT: u64 = 0xFE_FE_FE_FE_FE_FE_FE_00;
+        mask = MASK_UPPER_LEFT & (pos << 9);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_UPPER_LEFT & (mask << 9);
+        }
+        if (mask & self.player_board) != 0 {
+            reversed |= tmp;
+        }
+        // upper right
+        const MASK_UPPER_RIGHT: u64 = 0x7F_7F_7F_7F_7F_7F_7F_00;
+        mask = MASK_UPPER_RIGHT & (pos << 7);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_UPPER_RIGHT & (mask << 7);
+        }
+        if (mask & self.player_board) != 0 {
+            reversed |= tmp;
+        }
+        // lower left
+        const MASK_LOWER_LEFT: u64 = 0xFE_FE_FE_FE_FE_FE_FE;
+        mask = MASK_LOWER_LEFT & (pos >> 7);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_LOWER_LEFT & (mask >> 7);
+        }
+        if (mask & self.player_board) != 0 {
+            reversed |= tmp;
+        }
+        // lower right
+        const MASK_LOWER_RIGHT: u64 = 0x7F_7F_7F_7F_7F_7F_7F;
+        mask = MASK_LOWER_RIGHT & (pos >> 9);
+        tmp = 0;
+        while mask & self.opponent_board != 0 {
+            tmp |= mask;
+            mask = MASK_LOWER_RIGHT & (mask >> 9);
+        }
+        if (mask & self.player_board) != 0 {
+            reversed |= tmp;
+        }
+        self.player_board ^= reversed | pos;
+        self.opponent_board ^= reversed;
+    }
+
+    fn do_move(&mut self, pos: usize) {
+        if pos >= BOARD_SIZE * BOARD_SIZE {
+            panic!("Invalid position");
+        }
+        let pos_bit = Board::pos2bit(pos);
+        if self.is_legal_move(pos) {
+            self.reverse(pos_bit);
+            swap(&mut self.player_board, &mut self.opponent_board);
+            self.turn = match self.turn {
+                Turn::Black => Turn::White,
+                Turn::White => Turn::Black,
+            };
+        } else {
+            panic!("Invalid move");
+        }
+    }
+
+    fn do_pass(&mut self) {
+        if self.get_legal_moves() == 0 {
+            swap(&mut self.player_board, &mut self.opponent_board);
+            self.turn = match self.turn {
+                Turn::Black => Turn::White,
+                Turn::White => Turn::Black,
+            };
+        } else {
+            panic!("Invalid pass");
+        }
     }
 }
 
