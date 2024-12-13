@@ -20,5 +20,5 @@ dev:
 test: dev
 	$(PYTEST) -v
 
-run:
+run: dev
 	$(PYTHON) main.py

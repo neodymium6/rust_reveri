@@ -12,6 +12,14 @@ enum Turn {
     White, 
 }
 
+#[pyclass(eq, eq_int)]
+#[derive(Clone, Copy, PartialEq)]
+enum Color {
+    Empty,
+    Black,
+    White,
+}
+
 #[pyclass]
 struct Board {
     player_board: u64,
@@ -71,12 +79,45 @@ impl Board {
         }
         self.turn = turn;
     }
+
+    fn get_board_vec(&self) -> Vec<i32> {
+        let mut board_vec = Vec::new();
+        for i in 0..BOARD_SIZE {
+            for j in 0..BOARD_SIZE {
+                let pos = Board::pos2bit(i * BOARD_SIZE + j);
+                match (self.player_board & pos == 0, self.opponent_board & pos == 0) {
+                    (true, true) => board_vec.push(Color::Empty as i32),    // Empty
+                    (false, true) => board_vec.push(Color::Black as i32),   // Player
+                    (true, false) => board_vec.push(Color::White as i32),   // Opponent
+                    _ => panic!("Invalid board state"),
+                }
+            }
+        }
+        board_vec
+    }
+
+    fn get_board_matrix(&self) -> Vec<Vec<Vec<i32>>> {
+        let mut board_matrix = vec![vec![vec![0; BOARD_SIZE]; BOARD_SIZE]; 3];
+        for i in 0..BOARD_SIZE {
+            for j in 0..BOARD_SIZE {
+                let pos = Board::pos2bit(i * BOARD_SIZE + j);
+                match (self.player_board & pos == 0, self.opponent_board & pos == 0) {
+                    (true, true) => board_matrix[2][i][j] = 1,  // Empty
+                    (false, true) => board_matrix[0][i][j] = 1, // Player
+                    (true, false) => board_matrix[1][i][j] = 1, // Opponent
+                    _ => panic!("Invalid board state"),
+                }
+            }
+        }
+        board_matrix
+    }
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn rust_reversi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Turn>()?;
+    m.add_class::<Color>()?;
     m.add_class::<Board>()?;
     Ok(())
 }
