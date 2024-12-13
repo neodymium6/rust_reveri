@@ -425,7 +425,7 @@ impl Board {
 
     fn is_black_win(&self) -> PyResult<bool> {
         if self.is_game_over() {
-            Ok(self.opponent_piece_num() < self.player_piece_num())
+            Ok(self.black_piece_num() > self.white_piece_num())
         } else {
             Err(PyValueError::new_err("Game is not over yet"))
         }
@@ -433,7 +433,7 @@ impl Board {
 
     fn is_white_win(&self) -> PyResult<bool> {
         if self.is_game_over() {
-            Ok(self.opponent_piece_num() > self.player_piece_num())
+            Ok(self.white_piece_num() > self.black_piece_num())
         } else {
             Err(PyValueError::new_err("Game is not over yet"))
         }

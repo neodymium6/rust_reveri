@@ -155,3 +155,65 @@ def test_do_pass():
     board_t = Board()
     board_t.set_board_str(board_str, Turn.Black)
     assert board.get_board() == board_t.get_board()
+
+
+def test_draw():
+    board = Board()
+    assert not board.is_game_over()
+
+    board_str = "{}{}{}{}{}{}{}{}".format(
+        "XXXXXXXX",
+        "XXXXXXXX",
+        "XXXXXXXX",
+        "XXXXXXXX",
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "OOOOOOOO",
+    )
+    board.set_board_str(board_str, Turn.Black)
+    assert board.is_game_over()
+    assert not board.is_black_win()
+    assert not board.is_white_win()
+    assert board.is_draw()
+    assert board.get_winner() == None
+
+
+def test_black_win():
+    board = Board()
+    board_str = "{}{}{}{}{}{}{}{}".format(
+        "XXXXXXXX",
+        "XXXXXXXX",
+        "XXXXXXXX",
+        "XXXXXXOO",
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "OOOOOOOO",
+        "OOOOXXXX",
+    )
+    board.set_board_str(board_str, Turn.Black)
+    assert board.is_game_over()
+    assert board.is_black_win()
+    assert not board.is_white_win()
+    assert not board.is_draw()
+    assert board.get_winner() == Turn.Black
+
+
+def test_pass_game_over():
+    board = Board()
+    board_str = "{}{}{}{}{}{}{}{}".format(
+        "XXXXXXX-",
+        "XXXXXXX-",
+        "XXXXXXX-",
+        "--------",
+        "OOOOOOO-",
+        "--------",
+        "--------",
+        "--------",
+    )
+    board.set_board_str(board_str, Turn.Black)
+    assert board.is_pass()
+    board.do_pass()
+    assert board.is_pass()
+    assert board.is_game_over()
+    assert board.is_black_win()
