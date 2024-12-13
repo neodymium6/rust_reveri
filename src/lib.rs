@@ -493,6 +493,14 @@ impl Board {
         }
         board_str
     }
+
+    fn clone(&self) -> Self {
+        Board {
+            player_board: self.player_board,
+            opponent_board: self.opponent_board,
+            turn: self.turn,
+        }
+    }
 }
 
 /// A Python module implemented in Rust.
