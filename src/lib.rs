@@ -1,6 +1,6 @@
 use std::mem::swap;
 
-use pyo3::prelude::*;
+use pyo3::{exceptions::PyValueError, prelude::*};
 
 const BOARD_SIZE: usize = 8;
 const LINE_CHAR_BLACK: char = 'X';
@@ -56,7 +56,7 @@ impl Board {
         self.turn = turn;
     }
 
-    fn set_board_str(&mut self, line: &str, turn: Turn) {
+    fn set_board_str(&mut self, line: &str, turn: Turn) -> PyResult<()> {
         let mut player_board: u64 = 0;
         let mut opponent_board: u64 = 0;
         for (i, c) in line.chars().enumerate() {
@@ -69,7 +69,9 @@ impl Board {
                     opponent_board |= pos;
                 }
                 LINE_CHAR_EMPTY => {}
-                _ => panic!("Invalid line character"),
+                _ => {
+                    return Err(PyValueError::new_err("Invalid character"));
+                }
             }
         }
         if turn == Turn::Black {
@@ -80,9 +82,10 @@ impl Board {
             self.opponent_board = player_board;
         }
         self.turn = turn;
+        Ok(())
     }
 
-    fn get_board_vec(&self) -> Vec<i32> {
+    fn get_board_vec(&self) -> PyResult<Vec<i32>> {
         let mut board_vec = Vec::new();
         for i in 0..BOARD_SIZE {
             for j in 0..BOARD_SIZE {
@@ -91,14 +94,16 @@ impl Board {
                     (true, true) => board_vec.push(Color::Empty as i32),    // Empty
                     (false, true) => board_vec.push(Color::Black as i32),   // Player
                     (true, false) => board_vec.push(Color::White as i32),   // Opponent
-                    _ => panic!("Invalid board state"),
+                    _ => {
+                        return Err(PyValueError::new_err("Invalid board state"));
+                    }
                 }
             }
         }
-        board_vec
+        Ok(board_vec)
     }
 
-    fn get_board_matrix(&self) -> Vec<Vec<Vec<i32>>> {
+    fn get_board_matrix(&self) -> PyResult<Vec<Vec<Vec<i32>>>> {
         let mut board_matrix = vec![vec![vec![0; BOARD_SIZE]; BOARD_SIZE]; 3];
         for i in 0..BOARD_SIZE {
             for j in 0..BOARD_SIZE {
@@ -107,11 +112,13 @@ impl Board {
                     (true, true) => board_matrix[2][i][j] = 1,  // Empty
                     (false, true) => board_matrix[0][i][j] = 1, // Player
                     (true, false) => board_matrix[1][i][j] = 1, // Opponent
-                    _ => panic!("Invalid board state"),
+                    _ => {
+                        return Err(PyValueError::new_err("Invalid board state"));
+                    }
                 }
             }
         }
-        board_matrix
+        Ok(board_matrix)
     }
 
     fn player_piece_num(&self) -> i32 {
@@ -324,9 +331,9 @@ impl Board {
         self.opponent_board ^= reversed;
     }
 
-    fn do_move(&mut self, pos: usize) {
+    fn do_move(&mut self, pos: usize) -> PyResult<()> {
         if pos >= BOARD_SIZE * BOARD_SIZE {
-            panic!("Invalid position");
+            return Err(PyValueError::new_err("Invalid position"));
         }
         let pos_bit = Board::pos2bit(pos);
         if self.is_legal_move(pos) {
@@ -337,11 +344,12 @@ impl Board {
                 Turn::White => Turn::Black,
             };
         } else {
-            panic!("Invalid move");
+            return Err(PyValueError::new_err("Invalid move"));
         }
+        Ok(())
     }
 
-    fn do_pass(&mut self) {
+    fn do_pass(&mut self) -> PyResult<()> {
         if self.get_legal_moves() == 0 {
             swap(&mut self.player_board, &mut self.opponent_board);
             self.turn = match self.turn {
@@ -349,8 +357,9 @@ impl Board {
                 Turn::White => Turn::Black,
             };
         } else {
-            panic!("Invalid pass");
+            return Err(PyValueError::new_err("Invalid pass"));
         }
+        Ok(())
     }
 
     fn is_pass(&self) -> bool {
@@ -369,60 +378,60 @@ impl Board {
         self.is_pass() && opponent_board.is_pass()
     }
 
-    fn is_win(&self) -> bool {
+    fn is_win(&self) -> PyResult<bool> {
         if self.is_game_over() {
-            self.player_piece_num() > self.opponent_piece_num()
+            Ok(self.player_piece_num() > self.opponent_piece_num())
         } else {
-            panic!("Game is not over yet");
+            Err(PyValueError::new_err("Game is not over yet"))
         }
     }
 
-    fn is_lose(&self) -> bool {
+    fn is_lose(&self) -> PyResult<bool> {
         if self.is_game_over() {
-            self.player_piece_num() < self.opponent_piece_num()
+            Ok(self.player_piece_num() < self.opponent_piece_num())
         } else {
-            panic!("Game is not over yet");
+            Err(PyValueError::new_err("Game is not over yet"))
         }
     }
 
-    fn is_draw(&self) -> bool {
+    fn is_draw(&self) -> PyResult<bool> {
         if self.is_game_over() {
-            self.player_piece_num() == self.opponent_piece_num()
+            Ok(self.player_piece_num() == self.opponent_piece_num())
         } else {
-            panic!("Game is not over yet");
+            Err(PyValueError::new_err("Game is not over yet"))
         }
     }
 
-    fn is_black_win(&self) -> bool {
+    fn is_black_win(&self) -> PyResult<bool> {
         if self.is_game_over() {
-            self.black_piece_num() > self.white_piece_num()
+            Ok(self.opponent_piece_num() < self.player_piece_num())
         } else {
-            panic!("Game is not over yet");
+            Err(PyValueError::new_err("Game is not over yet"))
         }
     }
 
-    fn is_white_win(&self) -> bool {
+    fn is_white_win(&self) -> PyResult<bool> {
         if self.is_game_over() {
-            self.black_piece_num() < self.white_piece_num()
+            Ok(self.opponent_piece_num() > self.player_piece_num())
         } else {
-            panic!("Game is not over yet");
+            Err(PyValueError::new_err("Game is not over yet"))
         }
     }
 
-    fn get_winner(&self) -> Option<Turn> {
+    fn get_winner(&self) -> PyResult<Option<Turn>> {
         if self.is_game_over() {
-            if self.is_win() {
-                return Some(self.turn);
-            } else if self.is_lose() {
+            if self.is_win().unwrap() {
+                return Ok(Some(self.turn));
+            } else if self.is_lose().unwrap() {
                 return match self.turn {
-                    Turn::Black => Some(Turn::White),
-                    Turn::White => Some(Turn::Black),
+                    Turn::Black => Ok(Some(Turn::White)),
+                    Turn::White => Ok(Some(Turn::Black)),
                 };
             } else {
-                return None;
+                return Ok(None);
             }
         } else {
-            panic!("Game is not over yet");
+            Err(PyValueError::new_err("Game is not over yet"))
         }
     }
 }
