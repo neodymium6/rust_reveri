@@ -84,3 +84,24 @@ def test_piece_num():
     assert board.white_piece_num() == opponent_num_t
     assert board.piece_sum() == player_num_t + opponent_num_t
     assert board.diff_piece_num() == player_num_t - opponent_num_t
+
+
+def test_get_legal_moves():
+    board = Board()
+    board_str_t = "{}{}{}{}{}{}{}{}".format(
+        "--------",
+        "--------",
+        "--OOO---",
+        "---OXX--",
+        "--OOXX--",
+        "--OX----",
+        "--------",
+        "--------",
+    )
+    turn_t = Turn.White
+    board.set_board_str(board_str_t, turn_t)
+    legal_moves_t = [21, 30, 38, 44, 45, 46, 51, 52]
+    assert board.get_legal_moves_vec() == legal_moves_t
+    board.set_board_str(board_str_t, Turn.Black)
+    legal_moves_t = [9, 10, 11, 12, 25, 26, 33, 41, 49]
+    assert board.get_legal_moves_vec() == legal_moves_t

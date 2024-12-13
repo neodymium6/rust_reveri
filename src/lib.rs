@@ -143,6 +143,80 @@ impl Board {
     fn diff_piece_num(&self) -> i32 {
         (self.player_piece_num() - self.opponent_piece_num()).abs()
     }
+
+    fn get_legal_moves(&self) -> u64 {
+        let horizontal_watch = 0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board;
+        let vertical_watch = 0x00_FF_FF_FF_FF_FF_FF_00 & self.opponent_board;
+        let all_watch = 0x_00_7E_7E_7E_7E_7E_7E_7E_00 & self.opponent_board;
+        let blank = !(self.player_board | self.opponent_board);
+        let mut legal = 0x00_00_00_00_00_00_00_00;
+
+        // max of number of stones to reverse in each direction is 6
+        // mask is position that exists opponent's stone from piece on each direction
+        // left
+        let mut mask = horizontal_watch & (self.player_board << 1);
+        for _ in 0..5 {
+            mask |= horizontal_watch & (mask << 1);
+        }
+        legal |= blank & (mask << 1);
+        // right
+        mask = horizontal_watch & (self.player_board >> 1);
+        for _ in 0..5 {
+            mask |= horizontal_watch & (mask >> 1);
+        }
+        legal |= blank & (mask >> 1);
+        // up
+        mask = vertical_watch & (self.player_board << 8);
+        for _ in 0..5 {
+            mask |= vertical_watch & (mask << 8);
+        }
+        legal |= blank & (mask << 8);
+        // down
+        mask = vertical_watch & (self.player_board >> 8);
+        for _ in 0..5 {
+            mask |= vertical_watch & (mask >> 8);
+        }
+        legal |= blank & (mask >> 8);
+        // upper left
+        mask = all_watch & (self.player_board << 9);
+        for _ in 0..5 {
+            mask |= all_watch & (mask << 9);
+        }
+        legal |= blank & (mask << 9);
+        // upper right
+        mask = all_watch & (self.player_board << 7);
+        for _ in 0..5 {
+            mask |= all_watch & (mask << 7);
+        }
+        legal |= blank & (mask << 7);
+        // lower left
+        mask = all_watch & (self.player_board >> 7);
+        for _ in 0..5 {
+            mask |= all_watch & (mask >> 7);
+        }
+        legal |= blank & (mask >> 7);
+        // lower right
+        mask = all_watch & (self.player_board >> 9);
+        for _ in 0..5 {
+            mask |= all_watch & (mask >> 9);
+        }
+        legal |= blank & (mask >> 9);
+        legal
+    }
+
+    fn get_legal_moves_vec(&self) -> Vec<i32> {
+        let legal_moves = self.get_legal_moves();
+        let mut legal_moves_vec = Vec::new();
+        for i in 0..BOARD_SIZE {
+            for j in 0..BOARD_SIZE {
+                let pos = Board::pos2bit(i * BOARD_SIZE + j);
+                if legal_moves & pos != 0 {
+                    legal_moves_vec.push((i * BOARD_SIZE + j) as i32);
+                }
+            }
+        }
+        legal_moves_vec
+    }
 }
 
 /// A Python module implemented in Rust.
