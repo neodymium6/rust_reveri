@@ -1,4 +1,4 @@
-.PHONY: build test help dev
+.PHONY: build test help dev run
 
 # Python interpreter
 PYTHON := python3
@@ -10,12 +10,16 @@ help:
 	@echo "  make build    - Build the project with maturin (release mode)"
 	@echo "  make dev      - Build and install in development mode"
 	@echo "  make test     - Run tests"
+	@echo "  make run      - Run the main.py script"
 
 build:
 	$(MATURIN) build -i $(PYTHON) --release
 
 dev:
-	$(MATURIN) develop --release
+	$(MATURIN) develop
 
-test: dev
+test:
 	$(PYTEST) -v
+
+run:
+	$(PYTHON) main.py
