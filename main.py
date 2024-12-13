@@ -3,9 +3,9 @@ from rust_reversi import Board, Turn, Color  # type: ignore
 
 def main():
     board = Board()
-    print(board.get_board())
-    print(board.get_board_vec())
-    print(Color.Black)
+    print(board)
+    board.do_move(board.get_random_move())
+    print(board)
 
 
 if __name__ == "__main__":

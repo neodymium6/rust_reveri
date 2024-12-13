@@ -1,4 +1,5 @@
 use std::mem::swap;
+use rand;
 
 use pyo3::{exceptions::PyValueError, prelude::*};
 
@@ -454,6 +455,43 @@ impl Board {
         } else {
             Err(PyValueError::new_err("Game is not over yet"))
         }
+    }
+
+    fn get_random_move(&self) -> PyResult<i32> {
+        let legal_moves_vec = self.get_legal_moves_vec();
+        if legal_moves_vec.is_empty() {
+            return Err(PyValueError::new_err("No legal moves"));
+        }
+        let random_move = legal_moves_vec[rand::random::<usize>() % legal_moves_vec.len()];
+        Ok(random_move)
+    }
+
+    fn __str__(&self) -> String {
+        let mut board_str = String::new();
+        let player_char = match self.turn {
+            Turn::Black => LINE_CHAR_BLACK,
+            Turn::White => LINE_CHAR_WHITE,
+        };
+        let opponent_char = match self.turn {
+            Turn::Black => LINE_CHAR_WHITE,
+            Turn::White => LINE_CHAR_BLACK,
+        };
+        board_str.push_str(" |abcdefgh\n-+--------\n");
+        for i in 0..BOARD_SIZE {
+            board_str.push_str(&format!("{}|", i + 1));
+            for j in 0..BOARD_SIZE {
+                let pos = Board::pos2bit(i * BOARD_SIZE + j);
+                if self.player_board & pos != 0 {
+                    board_str.push(player_char);
+                } else if self.opponent_board & pos != 0 {
+                    board_str.push(opponent_char);
+                } else {
+                    board_str.push(LINE_CHAR_EMPTY);
+                }
+            }
+            board_str.push('\n');
+        }
+        board_str
     }
 }
 
