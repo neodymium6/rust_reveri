@@ -14,12 +14,42 @@ enum Turn {
     White, 
 }
 
+impl Turn {
+    fn opposite(&self) -> Turn {
+        match self {
+            Turn::Black => Turn::White,
+            Turn::White => Turn::Black,
+        }
+    }
+}
+
+#[pymethods]
+impl Turn {
+    fn __str__(&self) -> &'static str {
+        match self {
+            Turn::Black => "Black",
+            Turn::White => "White",
+        }
+    }
+}
+
 #[pyclass(eq, eq_int)]
 #[derive(Clone, Copy, PartialEq)]
 enum Color {
     Empty,
     Black,
     White,
+}
+
+#[pymethods]
+impl Color {
+    fn __str__(&self) -> &'static str {
+        match self {
+            Color::Empty => "Empty",
+            Color::Black => "Black",
+            Color::White => "White",
+        }
+    }
 }
 
 #[pyclass]
@@ -339,10 +369,7 @@ impl Board {
         if self.is_legal_move(pos) {
             self.reverse(pos_bit);
             swap(&mut self.player_board, &mut self.opponent_board);
-            self.turn = match self.turn {
-                Turn::Black => Turn::White,
-                Turn::White => Turn::Black,
-            };
+            self.turn = self.turn.opposite();
         } else {
             return Err(PyValueError::new_err("Invalid move"));
         }
@@ -352,10 +379,7 @@ impl Board {
     fn do_pass(&mut self) -> PyResult<()> {
         if self.get_legal_moves() == 0 {
             swap(&mut self.player_board, &mut self.opponent_board);
-            self.turn = match self.turn {
-                Turn::Black => Turn::White,
-                Turn::White => Turn::Black,
-            };
+            self.turn = self.turn.opposite();
         } else {
             return Err(PyValueError::new_err("Invalid pass"));
         }
@@ -370,10 +394,7 @@ impl Board {
         let opponent_board = Board {
             player_board: self.opponent_board,
             opponent_board: self.player_board,
-            turn: match self.turn {
-                Turn::Black => Turn::White,
-                Turn::White => Turn::Black,
-            },
+            turn: self.turn.opposite(),
         };
         self.is_pass() && opponent_board.is_pass()
     }
