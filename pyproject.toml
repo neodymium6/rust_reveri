@@ -13,6 +13,7 @@ classifiers = [
 dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
+sdist-include = ["LICENSE.txt", "README.md"]
 [tool.pytest.ini_options]
 testpaths = ["test"]
 python_files = ["*.py"]
