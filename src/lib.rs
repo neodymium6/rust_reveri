@@ -111,6 +111,38 @@ impl Board {
         }
         board_matrix
     }
+
+    fn player_piece_num(&self) -> i32 {
+        self.player_board.count_ones() as i32
+    }
+
+    fn opponent_piece_num(&self) -> i32 {
+        self.opponent_board.count_ones() as i32
+    }
+
+    fn black_piece_num(&self) -> i32 {
+        if self.turn == Turn::Black {
+            self.player_piece_num()
+        } else {
+            self.opponent_piece_num()
+        }
+    }
+
+    fn white_piece_num(&self) -> i32 {
+        if self.turn == Turn::White {
+            self.player_piece_num()
+        } else {
+            self.opponent_piece_num()
+        }
+    }
+
+    fn piece_sum(&self) -> i32 {
+        self.player_piece_num() + self.opponent_piece_num()
+    }
+
+    fn diff_piece_num(&self) -> i32 {
+        (self.player_piece_num() - self.opponent_piece_num()).abs()
+    }
 }
 
 /// A Python module implemented in Rust.

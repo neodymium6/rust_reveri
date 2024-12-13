@@ -71,3 +71,16 @@ def test_get_board_matrix():
 
     board_matrix = board.get_board_matrix()
     assert board_matrix == board_matrix_t
+
+
+def test_piece_num():
+    board = Board()
+    board.set_board(0xF0000000000000FF, 0x0000000FF0000000, Turn.Black)
+    player_num_t = 12
+    opponent_num_t = 8
+    assert board.player_piece_num() == player_num_t
+    assert board.opponent_piece_num() == opponent_num_t
+    assert board.black_piece_num() == player_num_t
+    assert board.white_piece_num() == opponent_num_t
+    assert board.piece_sum() == player_num_t + opponent_num_t
+    assert board.diff_piece_num() == player_num_t - opponent_num_t
