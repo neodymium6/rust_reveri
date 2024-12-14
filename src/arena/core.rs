@@ -29,7 +29,6 @@ impl Drop for Player {
     fn drop(&mut self) {
         self.stop().unwrap();
     }
-    
 }
 
 impl Player {
@@ -115,10 +114,15 @@ impl Player {
 }
 
 #[derive(Debug, Clone)]
-enum GameStatus {
+enum GameResult {
     BlackWin(usize, usize),
     WhiteWin(usize, usize),
     Draw(usize, usize),
+}
+
+#[derive(Debug, Clone)]
+enum GameStatus {
+    FINISHED(GameResult),
     Playing,
 }
 
@@ -138,12 +142,7 @@ struct Game<'a> {
     black_player: &'a mut Player,
     white_player: &'a mut Player,
     moves: Vec<Option<usize>>,
-    status: GameStatus,
-}
-
-struct GameResult {
-    board: Board,
-    moves: Vec<Option<usize>>,
+    board_log: Vec<(u64, u64, Turn)>,
     status: GameStatus,
 }
 
@@ -154,6 +153,7 @@ impl<'a> Game<'a> {
             black_player,
             white_player,
             moves: Vec::new(),
+            board_log: Vec::new(),
             status: GameStatus::Playing,
         }
     }
@@ -206,25 +206,25 @@ impl<'a> Game<'a> {
                     },
                     _ => return GameError::UnexpectedError,
                 })?;
-            self.moves.push(Some(mv));
+                self.moves.push(Some(mv));
+                self.board_log.push(self.board.get_board());
         }
 
         let winner = self.board.get_winner().unwrap();
         let black_pieces = self.board.black_piece_num() as usize;
         let white_pieces = self.board.white_piece_num() as usize;
         self.status = match winner {
-            Some(Turn::Black) => GameStatus::BlackWin(black_pieces, white_pieces),
-            Some(Turn::White) => GameStatus::WhiteWin(black_pieces, white_pieces),
-            None => GameStatus::Draw(black_pieces, white_pieces),
+            Some(Turn::Black) => GameStatus::FINISHED(GameResult::BlackWin(black_pieces, white_pieces)),
+            Some(Turn::White) => GameStatus::FINISHED(GameResult::WhiteWin(black_pieces, white_pieces)),
+            None => GameStatus::FINISHED(GameResult::Draw(black_pieces, white_pieces)),
         };
         Ok(())
     }
 
     fn get_result(&self) -> GameResult {
-        GameResult {
-            board: self.board.clone(),
-            moves: self.moves.clone(),
-            status: self.status.clone(),
+        match &self.status {
+            GameStatus::FINISHED(result) => result.clone(),
+            _ => panic!("Game is not finished yet"),
         }
     }
 }
@@ -295,22 +295,21 @@ impl Arena {
         let mut p1_win = 0;
         let mut p2_win = 0;
         let mut draw = 0;
-        for (order, game) in self.games.iter() {
-            match game.status {
-                GameStatus::BlackWin(_, _) => {
+        for (order, game_result) in self.games.iter() {
+            match game_result {
+                GameResult::BlackWin(_, _) => {
                     match order {
                         PlayerOrder::P1equalsBlack => p1_win += 1,
                         PlayerOrder::P2equalsBlack => p2_win += 1,
                     }
                 },
-                GameStatus::WhiteWin(_, _) => {
+                GameResult::WhiteWin(_, _) => {
                     match order {
                         PlayerOrder::P1equalsBlack => p2_win += 1,
                         PlayerOrder::P2equalsBlack => p1_win += 1,
                     }
                 },
-                GameStatus::Draw(_, _) => draw += 1,
-                _ => (),
+                GameResult::Draw(_, _) => draw += 1,
             }
         }
         (p1_win, p2_win, draw)
@@ -319,9 +318,9 @@ impl Arena {
     pub fn get_pieces(&self) -> (usize, usize) {
         let mut p1_pieces = 0;
         let mut p2_pieces = 0;
-        for (order, game) in self.games.iter() {
-            match game.status {
-                GameStatus::BlackWin(black_pieces, white_pieces) => {
+        for (order, game_result) in self.games.iter() {
+            match game_result {
+                GameResult::BlackWin(black_pieces, white_pieces) => {
                     match order {
                         PlayerOrder::P1equalsBlack => {
                             p1_pieces += black_pieces;
@@ -333,7 +332,7 @@ impl Arena {
                         }
                     }
                 },
-                GameStatus::WhiteWin(black_pieces, white_pieces) => {
+                GameResult::WhiteWin(black_pieces, white_pieces) => {
                     match order {
                         PlayerOrder::P1equalsBlack => {
                             p2_pieces += white_pieces;
@@ -345,11 +344,10 @@ impl Arena {
                         }
                     }
                 },
-                GameStatus::Draw(black_pieces, white_pieces) => {
+                GameResult::Draw(black_pieces, white_pieces) => {
                     p1_pieces += black_pieces;
                     p2_pieces += white_pieces;
                 },
-                _ => (),
             }
         }
         (p1_pieces, p2_pieces)
