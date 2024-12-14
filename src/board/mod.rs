@@ -1,6 +1,6 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 
-mod core;
+pub(crate) mod core;
 use core::{Turn as RustTurn, Color as RustColor, Board as RustBoard, BoardError};
 
 #[pyclass(eq)]
@@ -79,6 +79,14 @@ impl Board {
             BoardError::InvalidCharactor => PyValueError::new_err("Invalid charactor"),
             _ => PyValueError::new_err("Unexpected error"),
         })
+    }
+
+    fn get_board_line(&self) -> PyResult<String> {
+        self.inner.get_board_line()
+            .map_err(|e| match e {
+                BoardError::InvalidState => PyValueError::new_err("Invalid state"),
+                _ => PyValueError::new_err("Unexpected error"),
+            })
     }
 
     fn get_board_vec_black(&self) -> PyResult<Vec<Color>> {

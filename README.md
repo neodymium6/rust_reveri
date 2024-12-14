@@ -89,6 +89,7 @@ The main game board class with all game logic.
 - `get_board() -> tuple[int, int, Turn]`: Returns current board state (player bitboard, opponent bitboard, turn)
 - `set_board(player_board: int, opponent_board: int, turn: Turn) -> None`: Sets board state directly
 - `set_board_str(board_str: str, turn: Turn) -> None`: Sets board state from string representation
+- `get_board_src() -> str`: Returns string representation of board state
 - `get_board_vec_black() -> list[Color]`: Returns flattened board state as if current player using black pieces
 - `get_board_vec_turn() -> list[Color]`: Returns flattened board state with current player's pieces
 - `get_board_matrix() -> list[list[list[int]]]`: Returns 3D matrix representation of board state
