@@ -51,7 +51,7 @@ while not board.is_game_over():
 winner = board.get_winner()
 if winner is None:
     print("Game drawn.")
-elif winner == Turn.Black:
+elif winner == Turn.BLACK:
     print("Black wins!")
 else:
     print("White wins!")
@@ -65,16 +65,16 @@ else:
 
 Represents a player's turn in the game.
 
-- `Turn.Black`: Black player
-- `Turn.White`: White player
+- `Turn.BLACK`: Black player
+- `Turn.WHITE`: White player
 
 #### Color
 
 Represents the state of a cell on the board.
 
-- `Color.Empty`: Empty cell
-- `Color.Black`: Black piece
-- `Color.White`: White piece
+- `Color.EMPTY`: Empty cell
+- `Color.BLACK`: Black piece
+- `Color.WHITE`: White piece
 
 #### Board
 
@@ -89,7 +89,8 @@ The main game board class with all game logic.
 - `get_board() -> tuple[int, int, Turn]`: Returns current board state (player bitboard, opponent bitboard, turn)
 - `set_board(player_board: int, opponent_board: int, turn: Turn) -> None`: Sets board state directly
 - `set_board_str(board_str: str, turn: Turn) -> None`: Sets board state from string representation
-- `get_board_vec() -> list[int]`: Returns flattened board representation as a list of Colors
+- `get_board_vec_black() -> list[Color]`: Returns flattened board state as if current player using black pieces
+- `get_board_vec_turn() -> list[Color]`: Returns flattened board state with current player's pieces
 - `get_board_matrix() -> list[list[list[int]]]`: Returns 3D matrix representation of board state
 - `clone() -> Board`: Creates a deep copy of the board
 
