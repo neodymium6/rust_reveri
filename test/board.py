@@ -6,14 +6,14 @@ def test_init():
     player_board, opponent_board, turn = board.get_board()
     assert player_board == 0x0000000810000000
     assert opponent_board == 0x0000001008000000
-    assert turn == Turn.Black
+    assert turn == Turn.BLACK
 
 
 def test_set_board():
     board = Board()
     player_board_t = 0x0000000000000000
     opponent_board_t = 0x0000000000000000
-    turn_t = Turn.White
+    turn_t = Turn.WHITE
     board.set_board(player_board_t, opponent_board_t, turn_t)
     player_board, opponent_board, turn = board.get_board()
     assert player_board == player_board_t
@@ -33,7 +33,7 @@ def test_set_board_str():
         "-" * 8,
         "O" * 8,
     )
-    turn_t = Turn.Black
+    turn_t = Turn.BLACK
     board.set_board_str(board_str_t, turn_t)
 
     player_board, opponent_board, turn = board.get_board()
@@ -44,13 +44,13 @@ def test_set_board_str():
 
 def test_get_board_vec():
     board = Board()
-    board_vec_t = [Color.Empty] * 64
-    board_vec_t[27] = Color.White
-    board_vec_t[28] = Color.Black
-    board_vec_t[35] = Color.Black
-    board_vec_t[36] = Color.White
+    board_vec_t = [Color.EMPTY] * 64
+    board_vec_t[27] = Color.WHITE
+    board_vec_t[28] = Color.BLACK
+    board_vec_t[35] = Color.BLACK
+    board_vec_t[36] = Color.WHITE
 
-    board_vec = board.get_board_vec()
+    board_vec = board.get_board_vec_turn()
     assert board_vec == board_vec_t
 
 
@@ -75,7 +75,7 @@ def test_get_board_matrix():
 
 def test_piece_num():
     board = Board()
-    board.set_board(0xF0000000000000FF, 0x0000000FF0000000, Turn.Black)
+    board.set_board(0xF0000000000000FF, 0x0000000FF0000000, Turn.BLACK)
     player_num_t = 12
     opponent_num_t = 8
     assert board.player_piece_num() == player_num_t
@@ -98,11 +98,11 @@ def test_get_legal_moves():
         "--------",
         "--------",
     )
-    turn_t = Turn.White
+    turn_t = Turn.WHITE
     board.set_board_str(board_str_t, turn_t)
     legal_moves_t = [21, 30, 38, 44, 45, 46, 51, 52]
     assert board.get_legal_moves_vec() == legal_moves_t
-    board.set_board_str(board_str_t, Turn.Black)
+    board.set_board_str(board_str_t, Turn.BLACK)
     legal_moves_t = [9, 10, 11, 12, 25, 26, 33, 41, 49]
     assert board.get_legal_moves_vec() == legal_moves_t
 
@@ -119,7 +119,7 @@ def test_do_move():
         "--------",
         "--------",
     )
-    turn = Turn.White
+    turn = Turn.WHITE
     board.set_board_str(board_str, turn)
     board.do_move(21)
     board_str_t = "{}{}{}{}{}{}{}{}".format(
@@ -133,7 +133,7 @@ def test_do_move():
         "--------",
     )
     board_t = Board()
-    board_t.set_board_str(board_str_t, Turn.Black)
+    board_t.set_board_str(board_str_t, Turn.BLACK)
     assert board.get_board() == board_t.get_board()
 
 
@@ -149,11 +149,11 @@ def test_do_pass():
         "---O----",
         "---X----",
     )
-    turn = Turn.White
+    turn = Turn.WHITE
     board.set_board_str(board_str, turn)
     board.do_pass()
     board_t = Board()
-    board_t.set_board_str(board_str, Turn.Black)
+    board_t.set_board_str(board_str, Turn.BLACK)
     assert board.get_board() == board_t.get_board()
 
 
@@ -171,7 +171,7 @@ def test_draw():
         "OOOOOOOO",
         "OOOOOOOO",
     )
-    board.set_board_str(board_str, Turn.Black)
+    board.set_board_str(board_str, Turn.BLACK)
     assert board.is_game_over()
     assert not board.is_black_win()
     assert not board.is_white_win()
@@ -191,12 +191,12 @@ def test_black_win():
         "OOOOOOOO",
         "OOOOXXXX",
     )
-    board.set_board_str(board_str, Turn.Black)
+    board.set_board_str(board_str, Turn.BLACK)
     assert board.is_game_over()
     assert board.is_black_win()
     assert not board.is_white_win()
     assert not board.is_draw()
-    assert board.get_winner() == Turn.Black
+    assert board.get_winner() == Turn.BLACK
 
 
 def test_pass_game_over():
@@ -211,7 +211,7 @@ def test_pass_game_over():
         "--------",
         "--------",
     )
-    board.set_board_str(board_str, Turn.Black)
+    board.set_board_str(board_str, Turn.BLACK)
     assert board.is_pass()
     board.do_pass()
     assert board.is_pass()

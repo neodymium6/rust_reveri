@@ -1,4 +1,4 @@
-from rust_reversi import Board, Turn, Color  # type: ignore
+from rust_reversi import Board, Turn  # type: ignore
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
     winner = board.get_winner()
     if winner is None:
         print("Game drawn.")
-    elif winner == Turn.Black:
+    elif winner == Turn.BLACK:
         print("Black wins!")
     else:
         print("White wins!")
