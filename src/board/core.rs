@@ -99,6 +99,28 @@ impl Board {
         Ok(())
     }
 
+    pub fn get_board_line(&self) -> Result<String, BoardError> {
+        let mut board_str = String::new();
+        let player_char = match self.turn {
+            Turn::Black => LINE_CHAR_BLACK,
+            Turn::White => LINE_CHAR_WHITE,
+        };
+        let opponent_char = match self.turn {
+            Turn::Black => LINE_CHAR_WHITE,
+            Turn::White => LINE_CHAR_BLACK,
+        };
+        for i in 0..BOARD_SIZE * BOARD_SIZE {
+            let pos = Board::pos2bit(i);
+            match (self.player_board & pos, self.opponent_board & pos) {
+                (0, 0) => board_str.push(LINE_CHAR_EMPTY),
+                (_, 0) => board_str.push(player_char),
+                (0, _) => board_str.push(opponent_char),
+                (_, _) => return Err(BoardError::InvalidState),
+            }
+        }
+        Ok(board_str)
+    }
+
     pub fn get_board_vec_black(&self) -> Result<Vec<Color>, BoardError> {
         let mut board_vec = vec![Color::Empty; BOARD_SIZE * BOARD_SIZE];
         for i in 0..BOARD_SIZE * BOARD_SIZE {

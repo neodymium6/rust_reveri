@@ -42,6 +42,23 @@ def test_set_board_str():
     assert turn == turn_t
 
 
+def test_get_board_str():
+    board = Board()
+    board_str_t = "{}{}{}{}{}{}{}{}".format(
+        "--------",
+        "--------",
+        "--------",
+        "---OX---",
+        "---XO---",
+        "--------",
+        "--------",
+        "--------",
+    )
+    assert board.get_board_line() == board_str_t
+    board.set_board_str(board_str_t, Turn.WHITE)
+    assert board.get_board_line() == board_str_t
+
+
 def test_get_board_vec():
     board = Board()
     board_vec_t = [Color.EMPTY] * 64
