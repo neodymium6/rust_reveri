@@ -11,6 +11,9 @@ A high-performance Reversi (Othello) game engine implemented in Rust with Python
 - Move generation and validation
 - Random move sampling for testing
 - Verified move generation through Perft testing
+- Arena system for AI player evaluation
+- Process-based player execution with timeout management
+- Fair player evaluation with color alternation
 
 ## Installation
 
@@ -57,6 +60,81 @@ else:
     print("White wins!")
 ```
 
+### Using the Arena
+
+The Arena allows you to pit two AI players against each other and gather statistics about their performance:
+
+```python
+from rust_reversi import Arena
+import sys
+
+# Create an arena with two AI players
+python = sys.executable
+player1 = ["python", "player1.py"]  # Command to run first player
+player2 = ["./player2"]             # Command to run second player
+
+# Initialize the arena
+arena = Arena(player1, player2)
+
+# Play 100 games (must be an even number for fair color distribution)
+arena.play_n(100)
+
+# Get statistics
+wins1, wins2, draws = arena.get_stats()
+print(f"Player 1 wins: {wins1}")
+print(f"Player 2 wins: {wins2}")
+print(f"Draws: {draws}")
+
+# Get total pieces captured
+pieces1, pieces2 = arena.get_pieces()
+print(f"Player 1 total pieces: {pieces1}")
+print(f"Player 2 total pieces: {pieces2}")
+```
+
+#### Creating AI Players
+
+AI players should be implemented as scripts that:
+
+1. Accept a command line argument specifying their color ("BLACK" or "WHITE")
+2. Read board states from stdin
+3. Write moves to stdout
+4. Handle the "ping"/"pong" protocol for connection verification
+
+Example player implementation:
+
+```python
+import sys
+from rust_reversi import Board, Turn
+
+def main():
+    # Get color from command line argument
+    turn = Turn.BLACK if sys.argv[1] == "BLACK" else Turn.WHITE
+    board = Board()
+
+    while True:
+        try:
+            board_str = input().strip()
+
+            # Handle ping/pong protocol
+            if board_str == "ping":
+                print("pong", flush=True)
+                continue
+
+            # Update board state
+            board.set_board_str(board_str, turn)
+            
+            # Get and send move
+            move = board.get_random_move()
+            print(move, flush=True)
+
+        except Exception as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+```
+
 ## API Reference
 
 ### Classes
@@ -80,7 +158,7 @@ Represents the state of a cell on the board.
 
 The main game board class with all game logic.
 
-##### Constructor
+##### Board Constructor
 
 - `Board()`: Creates a new board with standard starting position
 
@@ -148,6 +226,20 @@ Where:
 - `O`: White pieces
 - `-`: Empty cells
 
+#### Arena
+
+The Arena class manages matches between two AI players.
+
+##### Arena Constructor
+
+- `Arena(command1: List[str], command2: List[str])`: Creates a new arena with commands to run two players
+
+##### Arena Methods
+
+- `play_n(n: int) -> None`: Play n games between the players (n must be even)
+- `get_stats() -> Tuple[int, int, int]`: Returns (player1_wins, player2_wins, draws)
+- `get_pieces() -> Tuple[int, int]`: Returns total pieces captured by each player
+
 ## Development
 
 ### Requirements
@@ -178,7 +270,7 @@ make test
 
 ## Testing
 
-The project includes comprehensive test coverage including Perft (Performance Test) for verifying game tree correctness:
+The project includes comprehensive test coverage including:
 
 ### Perft Testing
 
