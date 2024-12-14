@@ -21,7 +21,7 @@ impl Arena {
         match self.inner.play_n(n) {
             Ok(_) => Ok(()),
             Err(ArenaError::EngineStartError) => Err(PyValueError::new_err("Engine start error")),
-            Err(ArenaError::GameNumberInvalid) => Err(PyValueError::new_err("Game number invalid (must x % 2 == 0)")),
+            Err(ArenaError::GameNumberInvalid) => Err(PyValueError::new_err("Game count must be even")),
             Err(ArenaError::GameError(s)) => Err(PyValueError::new_err(format!("Game error: {:?}", s))),
         }
     }

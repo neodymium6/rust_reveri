@@ -9,8 +9,12 @@ def main():
     while True:
         try:
             board_str = input().strip()
-            board.set_board_str(board_str, turn)
 
+            if board_str == "ping":
+                print("pong", flush=True)
+                continue
+
+            board.set_board_str(board_str, turn)
             move = board.get_random_move()
 
             print(move, flush=True)
