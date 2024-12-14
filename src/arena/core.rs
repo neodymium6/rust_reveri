@@ -65,6 +65,20 @@ impl Player {
         self.stdin = Some(stdin);
         self.stdout = Some(stdout);
 
+        // ping-pong test
+        let stdin = self.stdin.as_mut().ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No stdin"))?;
+        writeln!(stdin, "ping")
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Write error"))?;
+        stdin.flush()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Flush error"))?;
+        let stdout = self.stdout.as_mut().ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No stdout"))?;
+        let mut response = String::new();
+        stdout.read_line(&mut response)
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Read error"))?;
+        if response.trim() != "pong" {
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Invalid response"));
+        }
+
         Ok(())
     }
 
