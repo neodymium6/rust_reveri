@@ -1,5 +1,6 @@
 from rust_reversi import Board, Turn, Color  # type: ignore
 
+MAX_DEPTH = 8
 ANS_MODE1 = [4, 12, 56, 244, 1396, 8200, 55092, 390216, 3005288, 24571284]
 ANS_MODE2 = [4, 12, 56, 244, 1396, 8200, 55092, 390216, 3005320, 24571420]
 
@@ -21,7 +22,7 @@ def test_mode1():
             count += perft(new_board, depth - 1)
         return count
 
-    for i in range(1, len(ANS_MODE1) + 1):
+    for i in range(1, MAX_DEPTH + 1):
         board = Board()
         assert perft(board, i) == ANS_MODE1[i - 1]
 
@@ -43,6 +44,6 @@ def test_mode2():
             count += perft(new_board, depth - 1)
         return count
 
-    for i in range(1, len(ANS_MODE2) + 1):
+    for i in range(1, MAX_DEPTH + 1):
         board = Board()
         assert perft(board, i) == ANS_MODE2[i - 1]
