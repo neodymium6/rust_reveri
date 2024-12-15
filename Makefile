@@ -1,4 +1,4 @@
-.PHONY: build test help dev run bench bench-save bench-comp
+.PHONY: build test help dev run bench bench-save bench-comp bench-repo
 
 # Python interpreter
 PYTHON := python3
@@ -14,6 +14,7 @@ help:
 	@echo "  make bench      - Run benchmarks"
 	@echo "  make bench-save - Run benchmarks and save results"
 	@echo "  make bench-comp - Run benchmarks and compare with previous results"
+	@echo "  make bench-repo - Generate a report with the benchmark results, and update the README.md file"
 
 build:
 	$(MATURIN) build -i $(PYTHON) --release
@@ -35,3 +36,6 @@ bench-save:
 
 bench-comp:
 	$(PYTEST) -v --benchmark-compare --benchmark-only
+
+bench-repo:
+	$(PYTHON) bench_report.py
