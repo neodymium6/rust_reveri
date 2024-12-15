@@ -1,4 +1,4 @@
-from rust_reversi import Board, Turn, Color  # type: ignore
+from rust_reversi import Board, Turn, Color
 
 
 def test_turn():

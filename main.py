@@ -1,4 +1,4 @@
-from rust_reversi import Board, Turn  # type: ignore
+from rust_reversi import Board, Turn
 
 
 def main():

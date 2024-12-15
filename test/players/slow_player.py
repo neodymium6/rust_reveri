@@ -1,5 +1,5 @@
 import sys
-from rust_reversi import Board, Turn  # type: ignore
+from rust_reversi import Board, Turn
 from time import sleep
 
 

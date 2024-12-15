@@ -1,4 +1,4 @@
-from rust_reversi import Arena  # type: ignore
+from rust_reversi import Arena
 import sys
 import os
 import pytest

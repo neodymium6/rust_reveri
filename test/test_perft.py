@@ -1,4 +1,4 @@
-from rust_reversi import Board, Turn, Color  # type: ignore
+from rust_reversi import Board
 
 MAX_DEPTH = 8
 ANS_MODE1 = [4, 12, 56, 244, 1396, 8200, 55092, 390216, 3005288, 24571284]
