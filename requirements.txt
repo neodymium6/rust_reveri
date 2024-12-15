@@ -16,7 +16,6 @@ pyparsing==3.2.0
 pytest==8.3.4
 pytest-benchmark==5.1.0
 python-dateutil==2.9.0.post0
--e git+ssh://git@github.com/neodymium6/rust_reveri.git@7445c1df80fd0b8c62f1c86198715e4205818400#egg=rust_reversi
 six==1.17.0
 tomli==2.2.1
 zipp==3.21.0

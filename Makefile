@@ -48,7 +48,7 @@ bench-repo:
 	$(PYTHON) bench_report.py
 
 requirements:
-	$(PIP) freeze > requirements.txt
+	$(PIP) freeze | grep -v rust_reversi > requirements.txt
 
 install:
 	$(PIP) install -r requirements.txt
