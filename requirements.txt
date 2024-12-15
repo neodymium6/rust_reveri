@@ -1,0 +1,22 @@
+contourpy==1.3.0
+cycler==0.12.1
+exceptiongroup==1.2.2
+fonttools==4.55.3
+importlib_resources==6.4.5
+iniconfig==2.0.0
+kiwisolver==1.4.7
+matplotlib==3.9.4
+maturin==1.7.8
+numpy==2.0.2
+packaging==24.2
+pillow==11.0.0
+pluggy==1.5.0
+py-cpuinfo==9.0.0
+pyparsing==3.2.0
+pytest==8.3.4
+pytest-benchmark==5.1.0
+python-dateutil==2.9.0.post0
+-e git+ssh://git@github.com/neodymium6/rust_reveri.git@7445c1df80fd0b8c62f1c86198715e4205818400#egg=rust_reversi
+six==1.17.0
+tomli==2.2.1
+zipp==3.21.0
