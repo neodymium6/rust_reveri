@@ -1,6 +1,26 @@
 from rust_reversi import Board, Turn, Color  # type: ignore
 
 
+def test_turn():
+    assert Turn.BLACK == Turn.BLACK
+    assert Turn.WHITE == Turn.WHITE
+    assert Turn.BLACK != Turn.WHITE
+    assert str(Turn.BLACK) == "Black"
+    assert str(Turn.WHITE) == "White"
+
+
+def test_color():
+    assert Color.EMPTY == Color.EMPTY
+    assert Color.BLACK == Color.BLACK
+    assert Color.WHITE == Color.WHITE
+    assert Color.EMPTY != Color.BLACK
+    assert Color.EMPTY != Color.WHITE
+    assert Color.BLACK != Color.WHITE
+    assert str(Color.EMPTY) == "Empty"
+    assert str(Color.BLACK) == "Black"
+    assert str(Color.WHITE) == "White"
+
+
 def test_init():
     board = Board()
     player_board, opponent_board, turn = board.get_board()
