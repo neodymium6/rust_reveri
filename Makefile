@@ -33,12 +33,15 @@ run:
 	$(PYTHON) main.py
 
 bench:
+	$(MATURIN) develop --release
 	$(PYTEST) -v --benchmark-only
 
 bench-save:
+	$(MATURIN) develop --release
 	$(PYTEST) -v --benchmark-autosave --benchmark-only
 
 bench-comp:
+	$(MATURIN) develop --release
 	$(PYTEST) -v --benchmark-compare --benchmark-only
 
 bench-repo:
