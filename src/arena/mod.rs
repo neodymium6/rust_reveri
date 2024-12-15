@@ -20,9 +20,12 @@ impl Arena {
     fn play_n(&mut self, n: usize) -> PyResult<()> {
         match self.inner.play_n(n) {
             Ok(_) => Ok(()),
-            Err(ArenaError::EngineStartError) => Err(PyValueError::new_err("Engine start error")),
-            Err(ArenaError::GameNumberInvalid) => Err(PyValueError::new_err("Game count must be even")),
-            Err(ArenaError::GameError(s)) => Err(PyValueError::new_err(format!("Game error: {:?}", s))),
+            Err(e) => match e {
+                ArenaError::EngineStartError => Err(PyValueError::new_err("Engine start error")),
+                ArenaError::GameNumberInvalid => Err(PyValueError::new_err("Game count must be even")),
+                ArenaError::GameError(s) => Err(PyValueError::new_err(format!("Game error: {:?}", s))),
+                _ => Err(PyValueError::new_err(format!("{:?}", e))),
+            },
         }
     }
 

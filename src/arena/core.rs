@@ -243,9 +243,13 @@ impl<'a> Game<'a> {
     }
 }
 
+#[derive(Debug)]
 pub enum ArenaError {
     EngineStartError,
     GameNumberInvalid,
+    ThreadJoinError,
+    ThreadSendError,
+    ThreadReceiveError,
     GameError(GameError),
 }
 
@@ -272,34 +276,81 @@ impl Arena {
         if n % 2 != 0 {
             return Err(ArenaError::GameNumberInvalid);
         }
-        let mut p1_black_player = Player::new(self.command1.clone(), Turn::Black);
-        let mut p1_white_player = Player::new(self.command2.clone(), Turn::White);
-        let mut p2_black_player = Player::new(self.command2.clone(), Turn::Black);
-        let mut p2_white_player = Player::new(self.command1.clone(), Turn::White);
-        p1_black_player.start()
-            .map_err(|_| ArenaError::EngineStartError)?;
-        p1_white_player.start()
-            .map_err(|_| ArenaError::EngineStartError)?;
-        p2_black_player.start()
-            .map_err(|_| ArenaError::EngineStartError)?;
-        p2_white_player.start()
-            .map_err(|_| ArenaError::EngineStartError)?;
+        let mut players = vec![
+            (
+                Player::new(self.command1.clone(), Turn::Black),
+                Player::new(self.command2.clone(), Turn::White)
+            ),
+            (
+                Player::new(self.command2.clone(), Turn::Black),
+                Player::new(self.command1.clone(), Turn::White)
+            ),
+        ];
     
-        for _ in 0..(n / 2) {
-            {
-                let mut game = Game::new(&mut p1_black_player, &mut p2_white_player);
-                game.play()
-                    .map_err(|e| ArenaError::GameError(e))?;
-                
-                self.games.push((PlayerOrder::P1equalsBlack, game.get_result()));
-            }
+        for (p1, p2) in players.iter_mut() {
+            p1.start().map_err(|_| ArenaError::EngineStartError)?;
+            p2.start().map_err(|_| ArenaError::EngineStartError)?;
+        }
+    
+        let (tx, rx) = mpsc::channel();
 
-            {
-                let mut game = Game::new(&mut p2_black_player, &mut p1_white_player);
-                game.play()
-                    .map_err(|e| ArenaError::GameError(e))?;
-            
-                self.games.push((PlayerOrder::P2equalsBlack, game.get_result()));
+        let handles: Vec<_> = players.into_iter().enumerate().map(|(i, (mut p_b, mut p_w))| {
+            let tx = tx.clone();
+            match i {
+                0 => {
+                    thread::spawn(move || {
+                        for _ in 0..(n / 2) {
+                            let mut game = Game::new(&mut p_b,&mut  p_w);
+                            match game.play() {
+                                Ok(_) => {
+                                    tx.send(Ok((PlayerOrder::P1equalsBlack, game.get_result())))
+                                        .map_err(|_| ArenaError::ThreadSendError)?;
+                                },
+                                Err(e) => {
+                                    tx.send(Err(ArenaError::GameError(e)))
+                                        .map_err(|_| ArenaError::ThreadSendError)?;
+                                }
+                            }
+                        }
+                        Ok(())
+                    })
+                },
+                1 => {
+                    thread::spawn(move || {
+                        for _ in 0..(n / 2) {
+                            let mut game = Game::new(&mut p_b,&mut  p_w);
+                            match game.play() {
+                                Ok(_) => {
+                                    tx.send(Ok((PlayerOrder::P2equalsBlack, game.get_result())))
+                                        .map_err(|_| ArenaError::ThreadSendError)?;
+                                },
+                                Err(e) => {
+                                    tx.send(Err(ArenaError::GameError(e)))
+                                        .map_err(|_| ArenaError::ThreadSendError)?;
+                                }
+                            }
+                        }
+                        Ok(())
+                    })
+                },
+                _ => panic!("Invalid index"),
+            }
+        }).collect();
+    
+        for _ in 0..n {
+            match rx.recv().map_err(|_| ArenaError::ThreadReceiveError)? {
+                Ok((order, result)) => self.games.push((order, result)),
+                Err(e) => return Err(e),
+            }
+        }
+    
+        for handle in handles {
+            match handle.join() {
+                Ok(result) => match result {
+                    Ok(_) => continue,
+                    Err(e) => return Err(e),
+                },
+                Err(_) => return Err(ArenaError::ThreadJoinError),
             }
         }
         Ok(())

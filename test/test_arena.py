@@ -68,5 +68,5 @@ def test_arena_timeout():
 
     arena = Arena([python, slow_player], [python, random_player])
 
-    with pytest.raises(ValueError, match="Game error: BlackTimeout"):
+    with pytest.raises(ValueError, match="Game error: (Black|White)Timeout"):
         arena.play_n(2)
