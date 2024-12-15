@@ -305,7 +305,8 @@ The library uses bitboard representation and efficient algorithms for:
 
 - Legal move generation
 - Board state updates
-- Game state eva## Benchmark Results
+
+## Benchmark Results
 
 Benchmark history from 2024-12-15 to 2024-12-15
 

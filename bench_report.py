@@ -221,7 +221,7 @@ Benchmark history from {earliest_date.strftime('%Y-%m-%d')} to {latest_date.strf
         start_idx = content.rfind("## Benchmark Results")
         if start_idx != -1:
             # Keep content up to the benchmark section
-            content = content[: start_idx - 1] + benchmark_section
+            content = content[:start_idx] + benchmark_section
         else:
             # No existing benchmark section, append to end
             content += f"\n\n{benchmark_section}"
