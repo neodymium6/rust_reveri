@@ -250,23 +250,34 @@ The Arena class manages matches between two AI players.
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/rust-reversi.git
-cd rust-reversi
-make dev    # Development build
-```
+git clone https://github.com/neodymium6/rust_reversi.git
+cd rust_reversi
 
-### Running Tests
+# Create and activate virtual environment (recommended)
+python -m venv .venv
+source .venv/bin/activate
 
-```bash
-make test
+# Install dependencies
+make install
+
+# Or for development setup
+pip install -r requirements.txt
+make dev
 ```
 
 ### Available Commands
 
-- `make build`: Build the project in release mode
-- `make dev`: Build and install in development mode
-- `make test`: Run test suite
-- `make run`: Run example script
+- `make help`: Show available commands
+- `make requirements`: Save current dependencies to requirements.txt
+- `make install`: Install the project dependencies
+- `make build`: Build the project with maturin (release mode)
+- `make dev`: Build and install the project in development mode
+- `make test`: Run tests
+- `make run`: Run the main.py script
+- `make bench`: Run benchmarks
+- `make bench-save`: Run benchmarks and save results
+- `make bench-comp`: Run benchmarks and compare with previous saved results
+- `make bench-repo`: Generate a report with benchmark results, and update the README
 
 ## Testing
 
