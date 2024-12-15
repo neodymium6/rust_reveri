@@ -171,6 +171,7 @@ The main game board class with all game logic.
 - `get_board_vec_black() -> list[Color]`: Returns flattened board state as if current player using black pieces
 - `get_board_vec_turn() -> list[Color]`: Returns flattened board state with current player's pieces
 - `get_board_matrix() -> list[list[list[int]]]`: Returns 3D matrix representation of board state
+- `get_child_boards() -> list[Board]`: Returns list of child boards for all legal moves
 - `clone() -> Board`: Creates a deep copy of the board
 
 ##### Piece Count Methods
@@ -304,7 +305,7 @@ The library uses bitboard representation and efficient algorithms for:
 
 - Legal move generation
 - Board state updates
-- Game state eval## Benchmark Results
+- Game state eva## Benchmark Results
 
 Benchmark history from 2024-12-15 to 2024-12-15
 
@@ -312,9 +313,9 @@ Benchmark history from 2024-12-15 to 2024-12-15
 
 | Test | Current | Min (Historical) | Max (Historical) | Trend |
 |------|---------|-----------------|------------------|-------|
-| Random 1000Games | 21.84ms | 21.84ms | 21.84ms | 📊 Single data point |
-| Perft 8 | 115.85ms | 115.85ms | 115.85ms | 📊 Single data point |
-| Arena 1000Games | 1.61s | 1.61s | 1.61s | 📊 Single data point |
+| Random 1000Games | 23.45ms | 21.84ms | 23.45ms | 📉 Declined |
+| Perft 8 | 85.91ms | 85.91ms | 115.85ms | 📈 Improved |
+| Arena 1000Games | 1.63s | 1.61s | 1.63s | 📉 Declined |
 
 ### Latest System Information
 

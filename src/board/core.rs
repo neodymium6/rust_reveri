@@ -278,6 +278,20 @@ impl Board {
         self.get_legal_moves() & Board::pos2bit(pos) != 0
     }
 
+    pub fn get_child_boards(&self) -> Option<Vec<Board>> {
+        if self.is_pass() {
+            return None;
+        }
+        let legal_moves_vec = self.get_legal_moves_vec();
+        let mut child_boards = Vec::new();
+        for pos in legal_moves_vec {
+            let mut child_board = self.clone();
+            child_board.do_move(pos).unwrap();
+            child_boards.push(child_board);
+        }
+        Some(child_boards)
+    }
+
     pub fn reverse(&mut self, pos: u64) {
         let mut reversed: u64 = 0;
         let mut mask: u64;

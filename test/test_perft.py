@@ -16,9 +16,7 @@ def test_mode1():
             new_board.do_pass()
             return perft(new_board, depth - 1)
         count = 0
-        for mv in board.get_legal_moves_vec():
-            new_board = board.clone()
-            new_board.do_move(mv)
+        for new_board in board.get_child_boards():
             count += perft(new_board, depth - 1)
         return count
 
@@ -38,9 +36,7 @@ def test_mode2():
             new_board.do_pass()
             return perft(new_board, depth)
         count = 0
-        for mv in board.get_legal_moves_vec():
-            new_board = board.clone()
-            new_board.do_move(mv)
+        for new_board in board.get_child_boards():
             count += perft(new_board, depth - 1)
         return count
 

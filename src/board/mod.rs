@@ -159,6 +159,15 @@ impl Board {
         self.inner.is_legal_move(pos)
     }
 
+    fn get_child_boards(&self) -> Option<Vec<Board>> {
+        match self.inner.get_child_boards() {
+            Some(board_vec) => {
+                Some(board_vec.into_iter().map(|board| Board { inner: board }).collect())
+            }
+            None => None,
+        }
+    }
+
     fn reverse(&mut self, pos: u64) {
         self.inner.reverse(pos)
     }
