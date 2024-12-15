@@ -1,5 +1,7 @@
+#[cfg(target_arch = "aarch64")]
 use core::fmt;
 use std::mem::swap;
+// use std::arch::aarch64::{self, uint64x2_t};
 
 const BOARD_SIZE: usize = 8;
 const LINE_CHAR_BLACK: char = 'X';
@@ -215,63 +217,95 @@ impl Board {
     }
 
     pub fn get_legal_moves(&self) -> u64 {
-        let horizontal_watch = 0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board;
-        let vertical_watch = 0x00_FF_FF_FF_FF_FF_FF_00 & self.opponent_board;
-        let all_watch = 0x_00_7E_7E_7E_7E_7E_7E_7E_00 & self.opponent_board;
-        let blank = !(self.player_board | self.opponent_board);
-        let mut legal = 0x00_00_00_00_00_00_00_00;
+        // impl from https://github.com/abulmo/edax-reversi/blob/master/src/board.c
+        // #[target_feature(enable = "neon")]
+        // unsafe fn get_legal_partial_simd(player_v: uint64x2_t, mut mask_v: uint64x2_t, shift: i64) -> uint64x2_t {
+        //     let shift_v = aarch64::vcombine_s64(aarch64::vdup_n_s64(shift), aarch64::vdup_n_s64(-1 * shift));
+        //     let shift2_v = aarch64::vaddq_s64(shift_v, shift_v);
+        //     let mut flip_v = aarch64::vandq_u64(
+        //         mask_v,
+        //         aarch64::vshlq_u64(player_v, shift_v),
+        //     );
+        //     flip_v = aarch64::vorrq_u64(
+        //         flip_v,
+        //         aarch64::vandq_u64(
+        //             mask_v,
+        //             aarch64::vshlq_u64(flip_v, shift_v),
+        //         ),
+        //     );
+        //     mask_v = aarch64::vandq_u64(
+        //         mask_v,
+        //         aarch64::vshlq_u64(mask_v, shift_v)
+        //     );
+        //     flip_v = aarch64::vorrq_u64(
+        //         flip_v,
+        //         aarch64::vandq_u64(
+        //             mask_v,
+        //             aarch64::vshlq_u64(flip_v, shift2_v),
+        //         ),
+        //     );
+        //     flip_v = aarch64::vorrq_u64(
+        //         flip_v,
+        //         aarch64::vandq_u64(
+        //             mask_v,
+        //             aarch64::vshlq_u64(flip_v, shift2_v),
+        //         ),
+        //     );
+        //     aarch64::vshlq_u64(
+        //         flip_v,
+        //         shift_v,
+        //     )
+        // } 
 
-        // max of number of stones to reverse in each direction is 6
-        // mask is position that exists opponent's stone from piece on each direction
-        // left
-        let mut mask = horizontal_watch & (self.player_board << 1);
-        for _ in 0..5 {
-            mask |= horizontal_watch & (mask << 1);
+        // unsafe {
+        //     let player_v = aarch64::vdupq_n_u64(self.player_board);
+        //     let opponent_v = aarch64::vdupq_n_u64(self.opponent_board);
+        //     let mask_v = aarch64::vdupq_n_u64(0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board);
+
+
+        //     let mut tmp = get_legal_partial_simd(player_v, mask_v, 1);
+        //     tmp = aarch64::vorrq_u64(
+        //         tmp,
+        //         get_legal_partial_simd(player_v, opponent_v, 8),
+        //     );
+        //     tmp = aarch64::vorrq_u64(
+        //         tmp,
+        //         get_legal_partial_simd(player_v, mask_v, 9),
+        //     );
+        //     tmp = aarch64::vorrq_u64(
+        //         tmp,
+        //         get_legal_partial_simd(player_v, mask_v, 7),
+        //     );
+        //     (aarch64::vgetq_lane_u64(tmp, 0) | aarch64::vgetq_lane_u64(tmp, 1)) & !(self.player_board | self.opponent_board)
+        // }
+
+        fn get_legal_partial(watch: u64, player_board: u64, shift: usize) -> u64 {
+            // let mut flip = ((player_board << shift) | (player_board >> shift)) & watch;
+            // for _ in 0..5 {
+            //     flip |= ((flip << shift) | (flip >> shift)) & watch;
+            // }
+            // blank & (flip << shift | flip >> shift)
+            let mut flip_l = (player_board << shift) & watch;
+            let mut flip_r = (player_board >> shift) & watch;
+            flip_l |= (flip_l << shift) & watch;
+            flip_r |= (flip_r >> shift) & watch;
+            let watch_l = watch & (watch << shift);
+            let watch_r = watch & (watch >> shift);
+            let shift2 = shift + shift;
+            flip_l |= (flip_l << shift2) & watch_l;
+            flip_r |= (flip_r >> shift2) & watch_r;
+            flip_l |= (flip_l << shift2) & watch_l;
+            flip_r |= (flip_r >> shift2) & watch_r;
+            flip_l << shift | flip_r >> shift
         }
-        legal |= blank & (mask << 1);
-        // right
-        mask = horizontal_watch & (self.player_board >> 1);
-        for _ in 0..5 {
-            mask |= horizontal_watch & (mask >> 1);
-        }
-        legal |= blank & (mask >> 1);
-        // up
-        mask = vertical_watch & (self.player_board << 8);
-        for _ in 0..5 {
-            mask |= vertical_watch & (mask << 8);
-        }
-        legal |= blank & (mask << 8);
-        // down
-        mask = vertical_watch & (self.player_board >> 8);
-        for _ in 0..5 {
-            mask |= vertical_watch & (mask >> 8);
-        }
-        legal |= blank & (mask >> 8);
-        // upper left
-        mask = all_watch & (self.player_board << 9);
-        for _ in 0..5 {
-            mask |= all_watch & (mask << 9);
-        }
-        legal |= blank & (mask << 9);
-        // upper right
-        mask = all_watch & (self.player_board << 7);
-        for _ in 0..5 {
-            mask |= all_watch & (mask << 7);
-        }
-        legal |= blank & (mask << 7);
-        // lower left
-        mask = all_watch & (self.player_board >> 7);
-        for _ in 0..5 {
-            mask |= all_watch & (mask >> 7);
-        }
-        legal |= blank & (mask >> 7);
-        // lower right
-        mask = all_watch & (self.player_board >> 9);
-        for _ in 0..5 {
-            mask |= all_watch & (mask >> 9);
-        }
-        legal |= blank & (mask >> 9);
-        legal
+
+        let mask = 0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board;
+        (
+            get_legal_partial(mask, self.player_board, 1) |
+            get_legal_partial(self.opponent_board, self.player_board, 8) |
+            get_legal_partial(mask, self.player_board, 9) |
+            get_legal_partial(mask, self.player_board, 7)
+        ) & !(self.player_board | self.opponent_board)
     }
 
     pub fn get_legal_moves_vec(&self) -> Vec<usize> {
@@ -536,4 +570,28 @@ impl fmt::Display for Board {
         write!(f, "{}", self.to_string().unwrap())
     }
     
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_random_1000000games() {
+        use std::time::Instant;
+        let start = Instant::now();
+        for _ in 0..1000000 {
+            let mut board = Board::new();
+            while !board.is_game_over() {
+                if board.is_pass() {
+                    board.do_pass().unwrap();
+                } else {
+                    let pos = board.get_random_move().unwrap();
+                    board.do_move(pos).unwrap();
+                }
+            }
+        }
+        let end = start.elapsed();
+        println!("10000 games: {:?}", end);
+    }
 }
