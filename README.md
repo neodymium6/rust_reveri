@@ -293,4 +293,31 @@ The library uses bitboard representation and efficient algorithms for:
 
 - Legal move generation
 - Board state updates
-- Game state evaluation
+- Game state evalu## Benchmark Results
+
+Benchmark history from 2024-12-15 to 2024-12-15
+
+### Summary
+
+| Test | Current | Min (Historical) | Max (Historical) | Trend |
+|------|---------|-----------------|------------------|-------|
+| Random 1000Games | 246.41ms | 246.41ms | 246.41ms | 📊 Single data point |
+| Perft 8 | 890.36ms | 890.36ms | 890.36ms | 📊 Single data point |
+| Arena 1000Games | 2.49s | 2.49s | 2.49s | 📊 Single data point |
+
+### Latest System Information
+
+- CPU: Apple M1
+- Architecture: arm64
+- Cores: 8
+- Python: 3.9.20
+
+### Performance History
+
+![Performance History](./docs/images/benchmark_history.svg)
+
+### Operations Per Second History
+
+![Operations History](./docs/images/benchmark_ops_history.svg)
+
+*Note: Performance may vary based on system specifications and load.*

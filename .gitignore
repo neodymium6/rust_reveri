@@ -73,3 +73,6 @@ docs/_build/
 
 # venv
 env/
+
+# pytest-benchmark
+.benchmarks/

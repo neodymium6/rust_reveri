@@ -1,4 +1,4 @@
-.PHONY: build test help dev run
+.PHONY: build test help dev run bench bench-save bench-comp bench-repo
 
 # Python interpreter
 PYTHON := python3
@@ -7,10 +7,14 @@ MATURIN := maturin
 
 help:
 	@echo "Available commands:"
-	@echo "  make build    - Build the project with maturin (release mode)"
-	@echo "  make dev      - Build and install in development mode"
-	@echo "  make test     - Run tests"
-	@echo "  make run      - Run the main.py script"
+	@echo "  make build      - Build the project with maturin (release mode)"
+	@echo "  make dev        - Build and install in development mode"
+	@echo "  make test       - Run tests"
+	@echo "  make run        - Run the main.py script"
+	@echo "  make bench      - Run benchmarks"
+	@echo "  make bench-save - Run benchmarks and save results"
+	@echo "  make bench-comp - Run benchmarks and compare with previous results"
+	@echo "  make bench-repo - Generate a report with the benchmark results, and update the README.md file"
 
 build:
 	$(MATURIN) build -i $(PYTHON) --release
@@ -19,7 +23,19 @@ dev:
 	$(MATURIN) develop
 
 test:
-	$(PYTEST) -v
+	$(PYTEST) -v --benchmark-skip
 
 run:
 	$(PYTHON) main.py
+
+bench:
+	$(PYTEST) -v --benchmark-only
+
+bench-save:
+	$(PYTEST) -v --benchmark-autosave --benchmark-only
+
+bench-comp:
+	$(PYTEST) -v --benchmark-compare --benchmark-only
+
+bench-repo:
+	$(PYTHON) bench_report.py
