@@ -216,6 +216,26 @@ impl Board {
         self.player_piece_num() - self.opponent_piece_num()
     }
 
+    fn get_legal_partial(watch: u64, player_board: u64, shift: usize) -> u64 {
+        // let mut flip = ((player_board << shift) | (player_board >> shift)) & watch;
+        // for _ in 0..5 {
+        //     flip |= ((flip << shift) | (flip >> shift)) & watch;
+        // }
+        // blank & (flip << shift | flip >> shift)
+        let mut flip_l = (player_board << shift) & watch;
+        let mut flip_r = (player_board >> shift) & watch;
+        flip_l |= (flip_l << shift) & watch;
+        flip_r |= (flip_r >> shift) & watch;
+        let watch_l = watch & (watch << shift);
+        let watch_r = watch & (watch >> shift);
+        let shift2 = shift + shift;
+        flip_l |= (flip_l << shift2) & watch_l;
+        flip_r |= (flip_r >> shift2) & watch_r;
+        flip_l |= (flip_l << shift2) & watch_l;
+        flip_r |= (flip_r >> shift2) & watch_r;
+        flip_l << shift | flip_r >> shift
+    }
+
     pub fn get_legal_moves(&self) -> u64 {
         // impl from https://github.com/abulmo/edax-reversi/blob/master/src/board.c
         // #[target_feature(enable = "neon")]
@@ -279,32 +299,12 @@ impl Board {
         //     (aarch64::vgetq_lane_u64(tmp, 0) | aarch64::vgetq_lane_u64(tmp, 1)) & !(self.player_board | self.opponent_board)
         // }
 
-        fn get_legal_partial(watch: u64, player_board: u64, shift: usize) -> u64 {
-            // let mut flip = ((player_board << shift) | (player_board >> shift)) & watch;
-            // for _ in 0..5 {
-            //     flip |= ((flip << shift) | (flip >> shift)) & watch;
-            // }
-            // blank & (flip << shift | flip >> shift)
-            let mut flip_l = (player_board << shift) & watch;
-            let mut flip_r = (player_board >> shift) & watch;
-            flip_l |= (flip_l << shift) & watch;
-            flip_r |= (flip_r >> shift) & watch;
-            let watch_l = watch & (watch << shift);
-            let watch_r = watch & (watch >> shift);
-            let shift2 = shift + shift;
-            flip_l |= (flip_l << shift2) & watch_l;
-            flip_r |= (flip_r >> shift2) & watch_r;
-            flip_l |= (flip_l << shift2) & watch_l;
-            flip_r |= (flip_r >> shift2) & watch_r;
-            flip_l << shift | flip_r >> shift
-        }
-
         let mask = 0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board;
         (
-            get_legal_partial(mask, self.player_board, 1) |
-            get_legal_partial(self.opponent_board, self.player_board, 8) |
-            get_legal_partial(mask, self.player_board, 9) |
-            get_legal_partial(mask, self.player_board, 7)
+            Board::get_legal_partial(mask, self.player_board, 1) |
+            Board::get_legal_partial(self.opponent_board, self.player_board, 8) |
+            Board::get_legal_partial(mask, self.player_board, 9) |
+            Board::get_legal_partial(mask, self.player_board, 7)
         ) & !(self.player_board | self.opponent_board)
     }
 
@@ -462,7 +462,23 @@ impl Board {
     }
 
     pub fn is_pass(&self) -> bool {
-        self.get_legal_moves() == 0
+        let mask_v = 0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board;
+        let mask_h = 0x00_FF_FF_FF_FF_FF_FF_00 & self.opponent_board;
+        let mask_a = 0x00_7E_7E_7E_7E_7E_7E_00 & self.opponent_board;
+        let enmpy = !(self.player_board | self.opponent_board);
+        if Board::get_legal_partial(mask_v, self.player_board, 1) & enmpy != 0 {
+            return false;
+        }
+        if Board::get_legal_partial(mask_h, self.player_board, 8) & enmpy != 0 {
+            return false;
+        }
+        if Board::get_legal_partial(mask_a, self.player_board, 9) & enmpy != 0 {
+            return false;
+        }
+        if Board::get_legal_partial(mask_a, self.player_board, 7) & enmpy != 0 {
+            return false;
+        }
+        true
     }
 
     pub fn is_game_over(&self) -> bool {
