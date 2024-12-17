@@ -168,10 +168,6 @@ impl Board {
         }
     }
 
-    fn reverse(&mut self, pos: u64) {
-        self.inner.reverse(pos)
-    }
-
     fn do_move(&mut self, pos: usize) -> PyResult<()> {
         self.inner.do_move(pos).map_err(|e| match e {
             BoardError::InvalidPosition => PyValueError::new_err("Invalid position"),
