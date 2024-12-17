@@ -187,6 +187,7 @@ The main game board class with all game logic.
 
 - `get_legal_moves() -> int`: Returns bitboard of legal moves
 - `get_legal_moves_vec() -> list[int]`: Returns list of legal move positions
+- `get_legal_moves_tf() -> list[bool]`: Returns list of legal move positions as boolean mask
 - `is_legal_move(pos: int) -> bool`: Checks if move at position is legal
 - `get_random_move() -> int`: Returns random legal move position
 

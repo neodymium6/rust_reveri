@@ -138,10 +138,18 @@ def test_get_legal_moves():
     turn_t = Turn.WHITE
     board.set_board_str(board_str_t, turn_t)
     legal_moves_t = [21, 30, 38, 44, 45, 46, 51, 52]
+    legal_moves_tf_t = [False] * 64
+    for i in legal_moves_t:
+        legal_moves_tf_t[i] = True
     assert board.get_legal_moves_vec() == legal_moves_t
+    assert board.get_legal_moves_tf() == legal_moves_tf_t
     board.set_board_str(board_str_t, Turn.BLACK)
     legal_moves_t = [9, 10, 11, 12, 25, 26, 33, 41, 49]
+    legal_moves_tf_t = [False] * 64
+    for i in legal_moves_t:
+        legal_moves_tf_t[i] = True
     assert board.get_legal_moves_vec() == legal_moves_t
+    assert board.get_legal_moves_tf() == legal_moves_tf_t
 
 
 def test_do_move():

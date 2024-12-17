@@ -155,6 +155,10 @@ impl Board {
         self.inner.get_legal_moves_vec()
     }
 
+    fn get_legal_moves_tf(&self) -> Vec<bool> {
+        self.inner.get_legal_moves_tf()
+    }
+
     fn is_legal_move(&self, pos: usize) -> bool {
         self.inner.is_legal_move(pos)
     }

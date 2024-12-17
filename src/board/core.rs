@@ -319,6 +319,15 @@ impl Board {
         legal_moves_vec
     }
 
+    pub fn get_legal_moves_tf(&self) -> Vec<bool> {
+        let legal_moves = self.get_legal_moves();
+        let mut legal_moves_tf = Vec::new();
+        for i in 0..BOARD_SIZE * BOARD_SIZE {
+            legal_moves_tf.push(legal_moves & Board::pos2bit(i) != 0);
+        }
+        legal_moves_tf
+    }
+
     pub fn is_legal_move(&self, pos: usize) -> bool {
         self.get_legal_moves() & Board::pos2bit(pos) != 0
     }
