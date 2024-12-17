@@ -482,12 +482,17 @@ impl Board {
     }
 
     pub fn is_game_over(&self) -> bool {
-        let opponent_board = Board {
-            player_board: self.opponent_board,
-            opponent_board: self.player_board,
-            turn: self.turn.opposite(),
-        };
-        self.is_pass() && opponent_board.is_pass()
+        if self.is_pass() {
+            let opponent_board = Board {
+                player_board: self.opponent_board,
+                opponent_board: self.player_board,
+                turn: self.turn.opposite(),
+            };
+            if opponent_board.is_pass() {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn is_win(&self) -> Result<bool, BoardError> {

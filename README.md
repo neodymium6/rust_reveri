@@ -308,15 +308,15 @@ The library uses bitboard representation and efficient algorithms for:
 
 ## Benchmark Results
 
-Benchmark history from 2024-12-15 to 2024-12-16
+Benchmark history from 2024-12-15 to 2024-12-17
 
 ### Summary
 
 | Test | Current | Min (Historical) | Max (Historical) | Trend |
 |------|---------|-----------------|------------------|-------|
-| Random 1000Games | 21.28ms | 21.28ms | 23.45ms | 📈 Improved |
-| Perft 8 | 81.63ms | 80.73ms | 115.85ms | 📈 Improved |
-| Arena 1000Games | 949.01ms | 949.01ms | 1.63s | 📈 Improved |
+| Random 1000Games | 21.26ms | 21.26ms | 23.45ms | 📈 Improved |
+| Perft 8 | 79.81ms | 79.81ms | 115.85ms | 📈 Improved |
+| Arena 1000Games | 870.07ms | 870.07ms | 1.63s | 📈 Improved |
 
 ### Latest System Information
 
