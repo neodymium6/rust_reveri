@@ -1,11 +1,14 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 
+mod local;
+mod error;
 mod core;
-use core::{Arena as RustArena, ArenaError};
+use error::ArenaError;
+use local::LocalArena as RustLocalArena;
 
 #[pyclass]
 pub struct Arena {
-    inner: RustArena,
+    inner: RustLocalArena,
 }
 
 #[pymethods]
@@ -13,7 +16,7 @@ impl Arena {
     #[new]
     fn new(command1: Vec<String>, command2: Vec<String>) -> Self {
         Arena {
-            inner: RustArena::new(command1, command2),
+            inner: RustLocalArena::new(command1, command2),
         }
     }
 
@@ -23,8 +26,9 @@ impl Arena {
             Err(e) => match e {
                 ArenaError::EngineStartError => Err(PyValueError::new_err("Engine start error")),
                 ArenaError::GameNumberInvalid => Err(PyValueError::new_err("Game count must be even")),
+                ArenaError::EngineEndError => Err(PyValueError::new_err("Engine end error")),
+                ArenaError::ThreadJoinError => Err(PyValueError::new_err("Thread join error")),
                 ArenaError::GameError(s) => Err(PyValueError::new_err(format!("Game error: {:?}", s))),
-                _ => Err(PyValueError::new_err(format!("{:?}", e))),
             },
         }
     }

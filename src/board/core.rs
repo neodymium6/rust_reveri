@@ -26,7 +26,7 @@ pub enum Turn {
 }
 
 impl Turn {
-    fn opposite(&self) -> Turn {
+    pub fn opposite(&self) -> Turn {
         match self {
             Turn::Black => Turn::White,
             Turn::White => Turn::Black,
