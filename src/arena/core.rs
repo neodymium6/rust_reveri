@@ -1,128 +1,70 @@
-use std::{io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, ChildStdout, Command}};
+use std::io::{BufRead, Write};
 use std::time::Duration;
 use std::sync::mpsc;
 use std::thread;
-
+use std::sync::{Arc, Mutex};
 use crate::board::core::{Board, BoardError, Turn};
+use crate::arena::error::{ArenaError, GameError, PlayerError};
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
 
 
-#[derive(Debug)]
-pub enum PlayerError {
-    NotStarted,
-    IoError,
-    ParseError,
-    TimeoutError,
-    BoardError,
+pub struct Player<W, R>
+where
+    W: Write + Send + 'static,
+    R: BufRead + Send + 'static,
+{
+    stdin: W,
+    stdout: Arc<Mutex<R>>,
 }
 
-struct Player {
-    command: Vec<String>,
-    turn: Turn,
-    process: Option<Child>,
-    stdin: Option<ChildStdin>,
-    stdout: Option<BufReader<ChildStdout>>,
-}
-
-impl Drop for Player {
-    fn drop(&mut self) {
-        self.stop().unwrap();
-    }
-}
-
-impl Player {
-    fn new(command: Vec<String>, turn: Turn) -> Self {
+impl<W, R> Player<W, R>
+where
+    R: BufRead + Send + 'static,
+    W: Write + Send + 'static,
+{
+    pub fn new(stdin: W, stdout: R) -> Self {
         Player {
-            command,
-            turn,
-            process: None,
-            stdin: None,
-            stdout: None,
+            stdin,
+            stdout: Arc::new(Mutex::new(stdout)),
         }
     }
 
-    fn start(&mut self) -> Result<(), std::io::Error> {
-        let mut command = Command::new(&self.command[0]);
-        for arg in self.command.iter().skip(1) {
-            command.arg(arg);
-        }
-
-        match self.turn {
-            Turn::Black => command.arg("BLACK"),
-            Turn::White => command.arg("WHITE"),
-        };
-
-        let mut process = command
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .spawn()?;
-
-        let stdin = process.stdin.take().unwrap();
-        let stdout = BufReader::new(process.stdout.take().unwrap());
-
-        self.process = Some(process);
-        self.stdin = Some(stdin);
-        self.stdout = Some(stdout);
-
-        // ping-pong test
-        let stdin = self.stdin.as_mut().ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No stdin"))?;
-        writeln!(stdin, "ping")
-            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Write error"))?;
-        stdin.flush()
-            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Flush error"))?;
-        let stdout = self.stdout.as_mut().ok_or(std::io::Error::new(std::io::ErrorKind::Other, "No stdout"))?;
-        let mut response = String::new();
-        stdout.read_line(&mut response)
-            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Read error"))?;
-        if response.trim() != "pong" {
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Invalid response"));
-        }
-
-        Ok(())
-    }
-
-    fn stop(&mut self) -> Result<(), std::io::Error> {
-        if let Some(process) = &mut self.process {
-            process.kill()?;
-            process.wait()?;
-        }
-        self.process = None;
-        self.stdin = None;
-        self.stdout = None;
-        Ok(())
-    }
-
-    fn get_move_with_timeout(&mut self, board: &Board, timeout: Duration) -> Result<usize, PlayerError> {
+    pub fn get_move_with_timeout(
+        &mut self,
+        board: &Board,
+        timeout: Duration,
+    ) -> Result<usize, PlayerError> {
         let (tx, rx) = mpsc::channel();
-        let stdin = self.stdin.as_mut().ok_or(PlayerError::NotStarted)?;
-        let board_line = board.get_board_line()
-            .map_err(|e| match e {
-                _ => PlayerError::BoardError,
-            })?;
-        writeln!(stdin, "{}", board_line)
+        
+        let board_line = board
+            .get_board_line()
+            .map_err(|_| PlayerError::BoardError)?;
+            
+        writeln!(self.stdin, "{}", board_line)
             .map_err(|_| PlayerError::IoError)?;
-        stdin.flush()
+        self.stdin
+            .flush()
             .map_err(|_| PlayerError::IoError)?;
 
-        let stdout = self.stdout.take().ok_or(PlayerError::NotStarted)?;
-        let mut reader = stdout;
+        let stdout = Arc::clone(&self.stdout);
         
         thread::spawn(move || {
+            let mut stdout = stdout.lock().unwrap();
             let mut response = String::new();
-            let result = reader.read_line(&mut response)
+            let result = stdout
+                .read_line(&mut response)
                 .map_err(|_| PlayerError::IoError)
-                .and_then(|_| response.trim().parse::<usize>()
-                    .map_err(|_| PlayerError::ParseError));
-            let _ = tx.send((result, reader));
+                .and_then(|_| {
+                    response.trim().parse::<usize>()
+                        .map_err(|_| PlayerError::ParseError)
+                });
+            tx.send(result).unwrap();
         });
 
         match rx.recv_timeout(timeout) {
-            Ok((result, reader)) => {
-                self.stdout = Some(reader);
-                result
-            }
-            Err(_) => Err(PlayerError::TimeoutError)
+            Ok(result) => result,
+            Err(_) => Err(PlayerError::TimeoutError),
         }
     }
 }
@@ -140,28 +82,28 @@ enum GameStatus {
     Playing,
 }
 
-#[derive(Debug)]
-pub enum GameError {
-    BlackInvalidMove,
-    WhiteInvalidMove,
-    BlackTimeout,
-    WhiteTimeout,
-    BlackCrash,
-    WhiteCrash,
-    UnexpectedError,
-}
-
-struct Game<'a> {
+struct Game<'a, W, R>
+where
+    W: Write + Send + 'static,
+    R: BufRead + Send + 'static,
+{
     board: Board,
-    black_player: &'a mut Player,
-    white_player: &'a mut Player,
+    black_player: &'a mut Player<W, R>,
+    white_player: &'a mut Player<W, R>,
     moves: Vec<Option<usize>>,
     board_log: Vec<(u64, u64, Turn)>,
     status: GameStatus,
 }
 
-impl<'a> Game<'a> {
-    fn new(black_player: &'a mut Player, white_player: &'a mut Player) -> Self {
+impl<'a, W, R> Game<'a, W, R>
+where
+    W: Write + Send + 'static,
+    R: BufRead + Send + 'static,
+{
+    fn new(
+        black_player: &'a mut Player<W, R>,
+        white_player: &'a mut Player<W, R>,
+    ) -> Self {
         Game {
             board: Board::new(),
             black_player,
@@ -173,25 +115,22 @@ impl<'a> Game<'a> {
     }
 
     fn get_move(&mut self) -> Result<usize, GameError> {
-        let player = match self.board.get_board().2 {
+        let turn = self.board.get_board().2;
+        let player = match turn {
             Turn::Black => &mut self.black_player,
             Turn::White => &mut self.white_player,
         };
         player.get_move_with_timeout(&self.board, DEFAULT_TIMEOUT)
             .map_err(|e| match e {
-                PlayerError::NotStarted => match self.board.get_board().2 {
-                    Turn::Black => GameError::UnexpectedError,
-                    Turn::White => GameError::UnexpectedError,
-                },
-                PlayerError::IoError => match self.board.get_board().2 {
+                PlayerError::IoError => match turn {
                     Turn::Black => GameError::BlackCrash,
                     Turn::White => GameError::WhiteCrash,
                 },
-                PlayerError::ParseError => match self.board.get_board().2 {
+                PlayerError::ParseError => match turn {
                     Turn::Black => GameError::BlackInvalidMove,
                     Turn::White => GameError::WhiteInvalidMove,
                 },
-                PlayerError::TimeoutError => match self.board.get_board().2 {
+                PlayerError::TimeoutError => match turn {
                     Turn::Black => GameError::BlackTimeout,
                     Turn::White => GameError::WhiteTimeout,
                 },
@@ -243,32 +182,29 @@ impl<'a> Game<'a> {
     }
 }
 
-#[derive(Debug)]
-pub enum ArenaError {
-    EngineStartError,
-    GameNumberInvalid,
-    ThreadJoinError,
-    ThreadSendError,
-    ThreadReceiveError,
-    GameError(GameError),
-}
 
 pub enum PlayerOrder {
     P1equalsBlack,
     P2equalsBlack,
 }
-pub struct Arena {
+pub struct Arena<W, R>
+where
+    W: Write + Send + 'static,
+    R: BufRead + Send + 'static,
+{
     games: Vec<(PlayerOrder, GameResult)>,
-    command1: Vec<String>,
-    command2: Vec<String>,
+    players: Vec<Arc<Mutex<(Player<W, R>, Player<W, R>)>>>,
 }
 
-impl Arena {
-    pub fn new(command1: Vec<String>, command2: Vec<String>) -> Self {
+impl <W, R> Arena<W, R>
+where
+    W: Write + Send + 'static,
+    R: BufRead + Send + 'static,
+{
+    pub fn new(players: Vec<(Player<W, R>, Player<W, R>)>) -> Self {
         Arena {
             games: Vec::new(),
-            command1,
-            command2,
+            players: players.into_iter().map(|(p1, p2)| Arc::new(Mutex::new((p1, p2)))).collect(),
         }
     }
 
@@ -276,83 +212,62 @@ impl Arena {
         if n % 2 != 0 {
             return Err(ArenaError::GameNumberInvalid);
         }
-        let mut players = vec![
-            (
-                Player::new(self.command1.clone(), Turn::Black),
-                Player::new(self.command2.clone(), Turn::White)
-            ),
-            (
-                Player::new(self.command2.clone(), Turn::Black),
-                Player::new(self.command1.clone(), Turn::White)
-            ),
-        ];
-    
-        for (p1, p2) in players.iter_mut() {
-            p1.start().map_err(|_| ArenaError::EngineStartError)?;
-            p2.start().map_err(|_| ArenaError::EngineStartError)?;
-        }
-    
-        let (tx, rx) = mpsc::channel();
 
-        let handles: Vec<_> = players.into_iter().enumerate().map(|(i, (mut p_b, mut p_w))| {
-            let tx = tx.clone();
-            match i {
-                0 => {
-                    thread::spawn(move || {
-                        for _ in 0..(n / 2) {
-                            let mut game = Game::new(&mut p_b,&mut  p_w);
-                            match game.play() {
-                                Ok(_) => {
-                                    tx.send(Ok((PlayerOrder::P1equalsBlack, game.get_result())))
-                                        .map_err(|_| ArenaError::ThreadSendError)?;
-                                },
-                                Err(e) => {
-                                    tx.send(Err(ArenaError::GameError(e)))
-                                        .map_err(|_| ArenaError::ThreadSendError)?;
-                                }
-                            }
+        let half_n = n / 2;
+        let players0 = Arc::clone(&self.players[0]);
+        let players1 = Arc::clone(&self.players[1]);
+        let mut handles = vec![];
+
+        // p1equalsBlack
+        {
+            handles.push(thread::spawn(move || {
+                let mut results = Vec::with_capacity(half_n);
+                for _ in 0..half_n {
+                    let mut player0 = players0.lock().unwrap();
+                    let (p1, p2) = &mut *player0;
+                    let mut game = Game::new(p1, p2);
+                    match game.play() {
+                        Ok(_) => {
+                            let result = game.get_result();
+                            results.push((PlayerOrder::P1equalsBlack, result));
                         }
-                        Ok(())
-                    })
-                },
-                1 => {
-                    thread::spawn(move || {
-                        for _ in 0..(n / 2) {
-                            let mut game = Game::new(&mut p_b,&mut  p_w);
-                            match game.play() {
-                                Ok(_) => {
-                                    tx.send(Ok((PlayerOrder::P2equalsBlack, game.get_result())))
-                                        .map_err(|_| ArenaError::ThreadSendError)?;
-                                },
-                                Err(e) => {
-                                    tx.send(Err(ArenaError::GameError(e)))
-                                        .map_err(|_| ArenaError::ThreadSendError)?;
-                                }
-                            }
-                        }
-                        Ok(())
-                    })
-                },
-                _ => panic!("Invalid index"),
-            }
-        }).collect();
-    
-        for _ in 0..n {
-            match rx.recv().map_err(|_| ArenaError::ThreadReceiveError)? {
-                Ok((order, result)) => self.games.push((order, result)),
-                Err(e) => return Err(e),
-            }
+                        Err(e) => return Err(ArenaError::GameError(e)),
+                    }
+                }
+                Ok(results)
+            }));
         }
-    
+
+        // p2equalsBlack
+        {
+            handles.push(thread::spawn(move || {
+                let mut results = Vec::with_capacity(half_n);
+                for _ in 0..half_n {
+                    let mut player1 = players1.lock().unwrap();
+                    let (p1, p2) = &mut *player1;
+                    let mut game = Game::new(p1, p2);
+                    match game.play() {
+                        Ok(_) => {
+                            let result = game.get_result();
+                            results.push((PlayerOrder::P2equalsBlack, result));
+                        }
+                        Err(e) => return Err(ArenaError::GameError(e)),
+                    }
+                }
+                Ok(results)
+            }));
+        }
+
+        let mut all_results = Vec::with_capacity(n);
         for handle in handles {
             match handle.join() {
-                Ok(result) => match result {
-                    Ok(_) => continue,
-                    Err(e) => return Err(e),
-                },
+                Ok(Ok(mut results)) => all_results.append(&mut results),
+                Ok(Err(e)) => return Err(e),
                 Err(_) => return Err(ArenaError::ThreadJoinError),
             }
         }
+
+        self.games.extend(all_results);
         Ok(())
     }
 
