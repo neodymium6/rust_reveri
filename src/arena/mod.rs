@@ -1,6 +1,7 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 mod local;
+mod network;
 mod error;
 mod core;
 use error::ArenaError;
