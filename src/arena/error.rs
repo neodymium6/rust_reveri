@@ -14,6 +14,7 @@ pub enum GameError {
     WhiteTimeout,
     BlackCrash,
     WhiteCrash,
+    GameNotOverYet,
     UnexpectedError,
 }
 
@@ -30,12 +31,13 @@ pub enum ArenaError {
 pub enum ClientManagerError {
     NoMoreClients,
     ClientNotExists,
-    IoError,
+    IoError(std::io::Error),
+    UnexpectedResponse,
 }
 
 impl From<std::io::Error> for ClientManagerError {
-    fn from(_: std::io::Error) -> Self {
-        ClientManagerError::IoError
+    fn from(e: std::io::Error) -> Self {
+        ClientManagerError::IoError(e)
     }
     
 }
@@ -45,17 +47,25 @@ pub enum NetworkArenaServerError {
     IoError(std::io::Error),
     ClientManagerError(ClientManagerError),
     ClientNotReady,
+    GameNumberInvalid,
+    ArenaError(ArenaError),
 }
 
 impl From<std::io::Error> for NetworkArenaServerError {
-    fn from(_: std::io::Error) -> Self {
-        NetworkArenaServerError::IoError(std::io::Error::new(std::io::ErrorKind::Other, "IO error"))
+    fn from(e: std::io::Error) -> Self {
+        NetworkArenaServerError::IoError(e)
     }
 }
 
 impl From<ClientManagerError> for NetworkArenaServerError {
     fn from(e: ClientManagerError) -> Self {
         NetworkArenaServerError::ClientManagerError(e)
+    }
+}
+
+impl From<ArenaError> for NetworkArenaServerError {
+    fn from(e: ArenaError) -> Self {
+        NetworkArenaServerError::ArenaError(e)
     }
 }
 
