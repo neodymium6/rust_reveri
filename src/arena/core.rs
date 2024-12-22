@@ -213,61 +213,86 @@ where
             return Err(ArenaError::GameNumberInvalid);
         }
 
-        let half_n = n / 2;
         let players0 = Arc::clone(&self.players[0]);
         let players1 = Arc::clone(&self.players[1]);
-        let mut handles = vec![];
 
-        // p1equalsBlack
-        {
-            handles.push(thread::spawn(move || {
-                let mut results = Vec::with_capacity(half_n);
-                for _ in 0..half_n {
-                    let mut player0 = players0.lock().unwrap();
-                    let (p1, p2) = &mut *player0;
-                    let mut game = Game::new(p1, p2);
-                    match game.play() {
-                        Ok(_) => {
-                            let result = game.get_result();
-                            results.push((PlayerOrder::P1equalsBlack, result));
-                        }
-                        Err(e) => return Err(ArenaError::GameError(e)),
-                    }
+
+        for _ in 0..n {
+            let player_order = match n % 2 {
+                0 => PlayerOrder::P1equalsBlack,
+                1 => PlayerOrder::P2equalsBlack,
+                _ => panic!("Invalid game number"),
+            };
+            let mut player = match player_order {
+                PlayerOrder::P1equalsBlack => players0.lock().unwrap(),
+                PlayerOrder::P2equalsBlack => players1.lock().unwrap(),
+            };
+            let (p1, p2) = &mut *player;
+            let mut game = Game::new(p1, p2);
+            match game.play() {
+                Ok(_) => {
+                    let result = game.get_result();
+                    self.games.push((player_order, result));
                 }
-                Ok(results)
-            }));
-        }
-
-        // p2equalsBlack
-        {
-            handles.push(thread::spawn(move || {
-                let mut results = Vec::with_capacity(half_n);
-                for _ in 0..half_n {
-                    let mut player1 = players1.lock().unwrap();
-                    let (p1, p2) = &mut *player1;
-                    let mut game = Game::new(p1, p2);
-                    match game.play() {
-                        Ok(_) => {
-                            let result = game.get_result();
-                            results.push((PlayerOrder::P2equalsBlack, result));
-                        }
-                        Err(e) => return Err(ArenaError::GameError(e)),
-                    }
-                }
-                Ok(results)
-            }));
-        }
-
-        let mut all_results = Vec::with_capacity(n);
-        for handle in handles {
-            match handle.join() {
-                Ok(Ok(mut results)) => all_results.append(&mut results),
-                Ok(Err(e)) => return Err(e),
-                Err(_) => return Err(ArenaError::ThreadJoinError),
+                Err(e) => return Err(ArenaError::GameError(e)),
             }
         }
 
-        self.games.extend(all_results);
+        // let half_n = n / 2;
+        // let players0 = Arc::clone(&self.players[0]);
+        // let players1 = Arc::clone(&self.players[1]);
+        // let mut handles = vec![];
+
+        // // p1equalsBlack
+        // {
+        //     handles.push(thread::spawn(move || {
+        //         let mut results = Vec::with_capacity(half_n);
+        //         for _ in 0..half_n {
+        //             let mut player0 = players0.lock().unwrap();
+        //             let (p1, p2) = &mut *player0;
+        //             let mut game = Game::new(p1, p2);
+        //             match game.play() {
+        //                 Ok(_) => {
+        //                     let result = game.get_result();
+        //                     results.push((PlayerOrder::P1equalsBlack, result));
+        //                 }
+        //                 Err(e) => return Err(ArenaError::GameError(e)),
+        //             }
+        //         }
+        //         Ok(results)
+        //     }));
+        // }
+
+        // // p2equalsBlack
+        // {
+        //     handles.push(thread::spawn(move || {
+        //         let mut results = Vec::with_capacity(half_n);
+        //         for _ in 0..half_n {
+        //             let mut player1 = players1.lock().unwrap();
+        //             let (p1, p2) = &mut *player1;
+        //             let mut game = Game::new(p1, p2);
+        //             match game.play() {
+        //                 Ok(_) => {
+        //                     let result = game.get_result();
+        //                     results.push((PlayerOrder::P2equalsBlack, result));
+        //                 }
+        //                 Err(e) => return Err(ArenaError::GameError(e)),
+        //             }
+        //         }
+        //         Ok(results)
+        //     }));
+        // }
+
+        // let mut all_results = Vec::with_capacity(n);
+        // for handle in handles {
+        //     match handle.join() {
+        //         Ok(Ok(mut results)) => all_results.append(&mut results),
+        //         Ok(Err(e)) => return Err(e),
+        //         Err(_) => return Err(ArenaError::ThreadJoinError),
+        //     }
+        // }
+
+        // self.games.extend(all_results);
         Ok(())
     }
 
