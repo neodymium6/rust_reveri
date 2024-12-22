@@ -1,7 +1,5 @@
-// #[cfg(target_arch = "aarch64")]
 use core::fmt;
 use std::mem::swap;
-// use std::arch::aarch64::{self, uint64x2_t};
 
 const BOARD_SIZE: usize = 8;
 const LINE_CHAR_BLACK: char = 'X';
@@ -217,11 +215,6 @@ impl Board {
     }
 
     fn get_legal_partial(watch: u64, player_board: u64, shift: usize) -> u64 {
-        // let mut flip = ((player_board << shift) | (player_board >> shift)) & watch;
-        // for _ in 0..5 {
-        //     flip |= ((flip << shift) | (flip >> shift)) & watch;
-        // }
-        // blank & (flip << shift | flip >> shift)
         let mut flip_l = (player_board << shift) & watch;
         let mut flip_r = (player_board >> shift) & watch;
         flip_l |= (flip_l << shift) & watch;
@@ -237,68 +230,6 @@ impl Board {
     }
 
     pub fn get_legal_moves(&self) -> u64 {
-        // impl from https://github.com/abulmo/edax-reversi/blob/master/src/board.c
-        // #[target_feature(enable = "neon")]
-        // unsafe fn get_legal_partial_simd(player_v: uint64x2_t, mut mask_v: uint64x2_t, shift: i64) -> uint64x2_t {
-        //     let shift_v = aarch64::vcombine_s64(aarch64::vdup_n_s64(shift), aarch64::vdup_n_s64(-1 * shift));
-        //     let shift2_v = aarch64::vaddq_s64(shift_v, shift_v);
-        //     let mut flip_v = aarch64::vandq_u64(
-        //         mask_v,
-        //         aarch64::vshlq_u64(player_v, shift_v),
-        //     );
-        //     flip_v = aarch64::vorrq_u64(
-        //         flip_v,
-        //         aarch64::vandq_u64(
-        //             mask_v,
-        //             aarch64::vshlq_u64(flip_v, shift_v),
-        //         ),
-        //     );
-        //     mask_v = aarch64::vandq_u64(
-        //         mask_v,
-        //         aarch64::vshlq_u64(mask_v, shift_v)
-        //     );
-        //     flip_v = aarch64::vorrq_u64(
-        //         flip_v,
-        //         aarch64::vandq_u64(
-        //             mask_v,
-        //             aarch64::vshlq_u64(flip_v, shift2_v),
-        //         ),
-        //     );
-        //     flip_v = aarch64::vorrq_u64(
-        //         flip_v,
-        //         aarch64::vandq_u64(
-        //             mask_v,
-        //             aarch64::vshlq_u64(flip_v, shift2_v),
-        //         ),
-        //     );
-        //     aarch64::vshlq_u64(
-        //         flip_v,
-        //         shift_v,
-        //     )
-        // } 
-
-        // unsafe {
-        //     let player_v = aarch64::vdupq_n_u64(self.player_board);
-        //     let opponent_v = aarch64::vdupq_n_u64(self.opponent_board);
-        //     let mask_v = aarch64::vdupq_n_u64(0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board);
-
-
-        //     let mut tmp = get_legal_partial_simd(player_v, mask_v, 1);
-        //     tmp = aarch64::vorrq_u64(
-        //         tmp,
-        //         get_legal_partial_simd(player_v, opponent_v, 8),
-        //     );
-        //     tmp = aarch64::vorrq_u64(
-        //         tmp,
-        //         get_legal_partial_simd(player_v, mask_v, 9),
-        //     );
-        //     tmp = aarch64::vorrq_u64(
-        //         tmp,
-        //         get_legal_partial_simd(player_v, mask_v, 7),
-        //     );
-        //     (aarch64::vgetq_lane_u64(tmp, 0) | aarch64::vgetq_lane_u64(tmp, 1)) & !(self.player_board | self.opponent_board)
-        // }
-
         let mask = 0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board;
         (
             Board::get_legal_partial(mask, self.player_board, 1) |
