@@ -12,6 +12,8 @@ A high-performance Reversi (Othello) game engine implemented in Rust with Python
 - Random move sampling for testing
 - Verified move generation through Perft testing
 - Arena system for AI player evaluation
+  - Local arena for direct player evaluation
+  - Network arena for distributed evaluation
 - Process-based player execution with timeout management
 - Fair player evaluation with color alternation
 
@@ -60,9 +62,9 @@ else:
     print("White wins!")
 ```
 
-### Using the Arena
+### Using the Local Arena
 
-The Arena allows you to pit two AI players against each other and gather statistics about their performance:
+The Local Arena allows you to evaluate your own AI players by running them locally on the same machine. This is useful for testing and comparing different versions or strategies of your AI implementations:
 
 ```python
 from rust_reversi import Arena
@@ -91,7 +93,40 @@ print(f"Player 1 total pieces: {pieces1}")
 print(f"Player 2 total pieces: {pieces2}")
 ```
 
-#### Creating AI Players
+### Using the Network Arena
+
+The Network Arena provides a system for playing against other people's AIs over a network. This allows for competitive matches and tournaments between different developers' AIs:
+
+```python
+# Server side
+from rust_reversi import NetworkArenaServer
+
+# Create a server that will run 1000 games per session
+server = NetworkArenaServer(1000)
+
+# Start the server
+server.start("localhost", 12345)
+```
+
+```python
+# Client side
+from rust_reversi import NetworkArenaClient
+import sys
+
+# Create a client with an AI player
+client = NetworkArenaClient(["python", "player.py"])
+
+# Connect to the server
+client.connect("localhost", 12345)
+
+# Get results after games
+wins, losses, draws = client.get_stats()
+pieces_captured, opponent_pieces = client.get_pieces()
+print(f"Wins: {wins}, Losses: {losses}, Draws: {draws}")
+print(f"Pieces Captured: {pieces_captured}, Opponent Pieces: {opponent_pieces}")
+```
+
+### Creating AI Players
 
 AI players should be implemented as scripts that:
 
@@ -228,19 +263,47 @@ Where:
 - `O`: White pieces
 - `-`: Empty cells
 
-#### Arena
+#### Arena Classes
 
-The Arena class manages matches between two AI players.
+##### Local Arena
 
-##### Arena Constructor
+The Arena class manages local matches between two AI players.
+
+###### Arena Constructor
 
 - `Arena(command1: List[str], command2: List[str])`: Creates a new arena with commands to run two players
 
-##### Arena Methods
+###### Arena Methods
 
 - `play_n(n: int) -> None`: Play n games between the players (n must be even)
 - `get_stats() -> Tuple[int, int, int]`: Returns (player1_wins, player2_wins, draws)
 - `get_pieces() -> Tuple[int, int]`: Returns total pieces captured by each player
+
+##### Network Arena Server
+
+The NetworkArenaServer class manages distributed matches between players connecting over network.
+
+###### NetworkArenaServer Constructor
+
+- `NetworkArenaServer(games_per_session: int)`: Creates a new server that runs specified number of games per session
+
+###### NetworkArenaServer Methods
+
+- `start(address: str, port: int) -> None`: Starts the server on specified address and port
+
+##### Network Arena Client
+
+The NetworkArenaClient class allows AI players to connect to a network arena server.
+
+###### NetworkArenaClient Constructor
+
+- `NetworkArenaClient(command: List[str])`: Creates a new client with command to run the player
+
+###### NetworkArenaClient Methods
+
+- `connect(address: str, port: int) -> None`: Connects to server at specified address and port
+- `get_stats() -> Tuple[int, int, int]`: Returns (wins, losses, draws)
+- `get_pieces() -> Tuple[int, int]`: Returns total pieces captured by player and opponent
 
 ## Development
 
@@ -309,15 +372,15 @@ The library uses bitboard representation and efficient algorithms for:
 
 ## Benchmark Results
 
-Benchmark history from 2024-12-15 to 2024-12-17
+Benchmark history from 2024-12-15 to 2024-12-22
 
 ### Summary
 
 | Test | Current | Min (Historical) | Max (Historical) | Trend |
 |------|---------|-----------------|------------------|-------|
-| Random 1000Games | 21.26ms | 21.26ms | 23.45ms | 📈 Improved |
-| Perft 8 | 79.81ms | 79.81ms | 115.85ms | 📈 Improved |
-| Arena 1000Games | 870.07ms | 870.07ms | 1.63s | 📈 Improved |
+| Random 1000Games | 21.89ms | 21.26ms | 23.45ms | 📉 Declined |
+| Perft 8 | 83.48ms | 79.81ms | 115.85ms | 📈 Improved |
+| Arena 1000Games | 1.31s | 870.07ms | 1.63s | 📈 Improved |
 
 ### Latest System Information
 
