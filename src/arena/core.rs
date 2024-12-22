@@ -37,19 +37,19 @@ where
     ) -> Result<usize, PlayerError> {
         let (tx, rx) = mpsc::channel();
         
-        let board_line = board
+        let mut board_line = board
             .get_board_line()
             .map_err(|_| PlayerError::BoardError)?;
+        board_line.push('\n');
             
-        writeln!(self.stdin, "{}", board_line)
-            .map_err(|_| PlayerError::IoError)?;
+        self.stdin.write(board_line.as_bytes()).unwrap();
         self.stdin
             .flush()
             .map_err(|_| PlayerError::IoError)?;
 
         let stdout = Arc::clone(&self.stdout);
         
-        thread::spawn(move || {
+        let handle = thread::spawn(move || {
             let mut stdout = stdout.lock().unwrap();
             let mut response = String::new();
             let result = stdout
@@ -63,8 +63,14 @@ where
         });
 
         match rx.recv_timeout(timeout) {
-            Ok(result) => result,
-            Err(_) => Err(PlayerError::TimeoutError),
+            Ok(result) => {
+                handle.join().unwrap();
+                result
+            }
+            Err(_) => {
+                handle.thread().unpark();
+                Err(PlayerError::TimeoutError)
+            }
         }
     }
 }
@@ -174,10 +180,10 @@ where
         Ok(())
     }
 
-    fn get_result(&self) -> GameResult {
+    fn get_result(&self) -> Result<GameResult, GameError> {
         match &self.status {
-            GameStatus::FINISHED(result) => result.clone(),
-            _ => panic!("Game is not finished yet"),
+            GameStatus::FINISHED(result) => Ok(result.clone()),
+            GameStatus::Playing => Err(GameError::GameNotOverYet),
         }
     }
 }
@@ -217,7 +223,6 @@ where
         let players0 = Arc::clone(&self.players[0]);
         let players1 = Arc::clone(&self.players[1]);
         let mut handles = vec![];
-
         // p1equalsBlack
         {
             handles.push(thread::spawn(move || {
@@ -261,12 +266,21 @@ where
         let mut all_results = Vec::with_capacity(n);
         for handle in handles {
             match handle.join() {
-                Ok(Ok(mut results)) => all_results.append(&mut results),
+                Ok(Ok(mut results)) => {
+                    for result in results.drain(..) {
+                        match result {
+                            (order, Ok(result)) => all_results.push((order, result)),
+                            (_, Err(e)) => {
+                                return Err(ArenaError::GameError(e));
+                            }
+                            
+                        }
+                    }
+                }
                 Ok(Err(e)) => return Err(e),
                 Err(_) => return Err(ArenaError::ThreadJoinError),
             }
         }
-
         self.games.extend(all_results);
         Ok(())
     }
