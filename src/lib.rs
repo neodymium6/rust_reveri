@@ -6,6 +6,8 @@ use board::{Turn, Color, Board};
 mod arena;
 use arena::{Arena, NetworkArenaClient, NetworkArenaServer};
 
+mod search;
+
 #[pymodule]
 fn rust_reversi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Turn>()?;
