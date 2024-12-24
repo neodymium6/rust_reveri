@@ -1,13 +1,14 @@
 import sys
 from rust_reversi import Board, Turn, PieceEvaluator, AlphaBetaSearch
-from time import sleep
+
+DEPTH = 3
 
 
 def main():
     turn = Turn.BLACK if sys.argv[1] == "BLACK" else Turn.WHITE
     board = Board()
     evaluator = PieceEvaluator()
-    search = AlphaBetaSearch(evaluator, 3)
+    search = AlphaBetaSearch(evaluator, DEPTH)
 
     while True:
         try:
