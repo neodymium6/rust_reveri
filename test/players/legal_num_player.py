@@ -1,5 +1,5 @@
 import sys
-from rust_reversi import Board, Turn, PieceEvaluator, AlphaBetaSearch
+from rust_reversi import Board, Turn, LegalNumEvaluator, AlphaBetaSearch
 import random
 
 DEPTH = int(sys.argv[1])
@@ -9,7 +9,7 @@ EPSILON = 1e-2
 def main():
     turn = Turn.BLACK if sys.argv[2] == "BLACK" else Turn.WHITE
     board = Board()
-    evaluator = PieceEvaluator()
+    evaluator = LegalNumEvaluator()
     search = AlphaBetaSearch(evaluator, DEPTH)
 
     while True:
