@@ -11,6 +11,7 @@ A high-performance Reversi (Othello) game engine implemented in Rust with Python
 - Move generation and validation
 - Random move sampling for testing
 - Verified move generation through Perft testing
+- Alpha-beta pruning based search with customizable evaluation functions
 - Arena system for AI player evaluation
   - Local arena for direct player evaluation
   - Network arena for distributed evaluation
@@ -135,16 +136,23 @@ AI players should be implemented as scripts that:
 3. Write moves to stdout
 4. Handle the "ping"/"pong" protocol for connection verification
 
-Example player implementation:
+Example player implementation with alpha-beta search:
 
 ```python
 import sys
-from rust_reversi import Board, Turn
+from rust_reversi import Board, Turn, PieceEvaluator, AlphaBetaSearch
+
+# Maximum search depth
+DEPTH = 3
 
 def main():
     # Get color from command line argument
     turn = Turn.BLACK if sys.argv[1] == "BLACK" else Turn.WHITE
     board = Board()
+    
+    # Initialize evaluator and search
+    evaluator = PieceEvaluator()
+    search = AlphaBetaSearch(evaluator, DEPTH)
 
     while True:
         try:
@@ -158,8 +166,8 @@ def main():
             # Update board state
             board.set_board_str(board_str, turn)
             
-            # Get and send move
-            move = board.get_random_move()
+            # Get and send move using alpha-beta search
+            move = search.get_move(board)
             print(move, flush=True)
 
         except Exception as e:
@@ -262,6 +270,49 @@ Where:
 - `X`: Black pieces
 - `O`: White pieces
 - `-`: Empty cells
+
+#### Search and Evaluation Classes
+
+##### Evaluator (Base Class)
+
+Base class for board evaluation functions.
+
+###### Evaluator Constructor
+
+- `Evaluator()`: Creates a new evaluator
+
+###### Evaluator Methods
+
+- `evaluate(board: Board) -> int`: Evaluates the given board state.
+override this method in subclasses to implement custom evaluation functions.
+
+##### PieceEvaluator (extends Evaluator)
+
+Simple evaluator that uses piece difference for evaluation.
+
+###### PieceEvaluator Constructor
+
+- `PieceEvaluator()`: Creates a new piece-counting evaluator
+
+##### LegalNumEvaluator (extends Evaluator)
+
+Evaluator that uses number of legal moves for evaluation.
+
+###### LegalNumEvaluator Constructor
+
+- `LegalNumEvaluator()`: Creates a new legal-moves-counting evaluator
+
+##### AlphaBetaSearch
+
+Alpha-beta pruning based search for finding best moves.
+
+###### AlphaBetaSearch Constructor
+
+- `AlphaBetaSearch(evaluator: Evaluator, depth: int)`: Creates a new search instance with given evaluator and search depth
+
+###### AlphaBetaSearch Methods
+
+- `get_move(board: Board) -> Optional[int]`: Returns best move found within specified depth
 
 #### Arena Classes
 
