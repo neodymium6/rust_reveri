@@ -49,8 +49,9 @@ impl Color {
 }
 
 #[pyclass]
+#[derive(Clone)]
 pub struct Board {
-    inner: RustBoard,
+    pub inner: RustBoard,
 }
 
 #[pymethods]
