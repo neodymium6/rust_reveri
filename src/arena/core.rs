@@ -3,6 +3,7 @@ use std::time::Duration;
 use std::sync::mpsc;
 use std::thread;
 use std::sync::{Arc, Mutex};
+use tqdm::pbar;
 use crate::board::core::{Board, BoardError, Turn};
 use crate::arena::error::{ArenaError, GameError, PlayerError};
 
@@ -222,6 +223,11 @@ where
         let half_n = n / 2;
         let players0 = Arc::clone(&self.players[0]);
         let players1 = Arc::clone(&self.players[1]);
+
+        let pb = Arc::new(Mutex::new(pbar(Some(n))));
+        let pb1 = Arc::clone(&pb);
+        let pb2 = Arc::clone(&pb);
+
         let mut handles = vec![];
         // p1equalsBlack
         {
@@ -238,6 +244,7 @@ where
                         }
                         Err(e) => return Err(ArenaError::GameError(e)),
                     }
+                    pb1.lock().unwrap().update(1).unwrap();
                 }
                 Ok(results)
             }));
@@ -258,6 +265,7 @@ where
                         }
                         Err(e) => return Err(ArenaError::GameError(e)),
                     }
+                    pb2.lock().unwrap().update(1).unwrap();
                 }
                 Ok(results)
             }));

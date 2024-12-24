@@ -218,6 +218,7 @@ impl ClientManager {
                 stream.set_read_timeout(Some(READ_TIMEOUT))
                     .map_err(|e| ClientManagerError::from(e))?;
                 self.clients[i] = Some(stream);
+                println!("Client {} connected", i);
                 return Ok(());
             }
         }
@@ -364,6 +365,7 @@ impl ClientManager {
                 None => return Err(ClientManagerError::ClientNotExists),
             }
         }
+        println!("Clients disconnected");
         Ok(())
     }
 
