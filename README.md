@@ -307,6 +307,16 @@ Evaluator that uses number of legal moves for evaluation.
 
 - `LegalNumEvaluator()`: Creates a new legal-moves-counting evaluator
 
+##### MatrixEvaluator (extends Evaluator)
+
+Evaluator that uses a matrix of weights for evaluation.
+Use 8x8 matrix for evaluation.
+Scores are calculated as product of matrix weights and board state. (player equals 1, opponent equals -1)
+
+###### MatrixEvaluator Constructor
+
+- `MatrixEvaluator(matrix: List[List[int])`: Creates a new matrix-based evaluator with given weights
+
 ##### AlphaBetaSearch
 
 Alpha-beta pruning based search for finding best moves.

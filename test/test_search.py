@@ -9,6 +9,7 @@ RANDOM_PLAYER = "players/random_player.py"
 PIECE_PLAYER = "players/piece_player.py"
 LEGAL_NUM_PLAYER = "players/legal_num_player.py"
 CUSTOM_PLAYER = "players/custom_eval_player.py"
+MATRIX_PLAYER = "players/matrix_player.py"
 
 
 def get_player_path(filename: str) -> str:
@@ -85,3 +86,34 @@ def test_custom_vs_piece():
 
     assert wins1 > wins2
     assert pieces1 > pieces2
+
+
+def test_matrix_vs_piece():
+    python = sys.executable
+    matrix_player = get_player_path(MATRIX_PLAYER)
+    piece_player = get_player_path(PIECE_PLAYER)
+    depth = 2
+    arena = Arena(
+        [python, matrix_player, str(depth)], [python, piece_player, str(depth)]
+    )
+    arena.play_n(N_GAMES)
+    wins1, wins2, draws = arena.get_stats()
+    pieces1, pieces2 = arena.get_pieces()
+
+    assert wins1 > wins2
+    assert pieces1 > pieces2
+
+
+def test_custom_vs_matrix():
+    python = sys.executable
+    custom_player = get_player_path(CUSTOM_PLAYER)
+    matrix_player = get_player_path(MATRIX_PLAYER)
+    depth = 2
+    arena = Arena(
+        [python, custom_player, str(depth)], [python, matrix_player, str(depth)]
+    )
+    arena.play_n(N_GAMES)
+    wins1, wins2, draws = arena.get_stats()
+    win_ratio = abs((wins1 - wins2) / N_GAMES)
+
+    assert win_ratio < 0.1  # sometimes it fails
