@@ -276,6 +276,9 @@ Where:
 ##### Evaluator (Base Class)
 
 Base class for board evaluation functions.
+Extend this class to implement custom evaluation functions.
+set_py_evaluator() method can be used to set a Python evaluator class for evaluation.
+See test/players/custom_eval_player.py for an example.
 
 ###### Evaluator Constructor
 
@@ -285,6 +288,8 @@ Base class for board evaluation functions.
 
 - `evaluate(board: Board) -> int`: Evaluates the given board state.
 override this method in subclasses to implement custom evaluation functions.
+
+- `set_py_evaluator(Evaluator) -> None`: Sets a Python evaluator class for evaluation
 
 ##### PieceEvaluator (extends Evaluator)
 
