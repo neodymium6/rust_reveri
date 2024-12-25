@@ -5,7 +5,10 @@ mod evaluator;
 
 use crate::board::Board;
 use alpha_beta::AlphaBetaSearch as RustAlphaBetaSearch;
-use evaluator::{Evaluator as RustEvaluator, PieceEvaluator as RustPieceEvaluator, LegalNumEvaluator as RustLegalNumEvaluator};
+use evaluator::{
+    Evaluator as RustEvaluator, LegalNumEvaluator as RustLegalNumEvaluator,
+    PieceEvaluator as RustPieceEvaluator,
+};
 
 #[derive(Clone)]
 enum EvaluatorType {
@@ -77,7 +80,6 @@ impl LegalNumEvaluator {
         (LegalNumEvaluator {}, evaluator)
     }
 }
-
 
 #[pyclass]
 pub struct AlphaBetaSearch {

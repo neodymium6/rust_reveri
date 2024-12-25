@@ -1,13 +1,13 @@
 use pyo3::prelude::*;
 
 mod board;
-use board::{Turn, Color, Board};
+use board::{Board, Color, Turn};
 
 mod arena;
 use arena::{Arena, NetworkArenaClient, NetworkArenaServer};
 
 mod search;
-use search::{AlphaBetaSearch, Evaluator, PieceEvaluator, LegalNumEvaluator};
+use search::{AlphaBetaSearch, Evaluator, LegalNumEvaluator, PieceEvaluator};
 
 #[pymodule]
 fn rust_reversi(m: &Bound<'_, PyModule>) -> PyResult<()> {

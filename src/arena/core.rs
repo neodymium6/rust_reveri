@@ -1,14 +1,13 @@
-use std::io::{BufRead, Write};
-use std::time::Duration;
-use std::sync::mpsc;
-use std::thread;
-use std::sync::{Arc, Mutex};
-use tqdm::pbar;
-use crate::board::core::{Board, BoardError, Turn};
 use crate::arena::error::{ArenaError, GameError, PlayerError};
+use crate::board::core::{Board, BoardError, Turn};
+use std::io::{BufRead, Write};
+use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+use tqdm::pbar;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
-
 
 pub struct Player<W, R>
 where
@@ -37,28 +36,28 @@ where
         timeout: Duration,
     ) -> Result<usize, PlayerError> {
         let (tx, rx) = mpsc::channel();
-        
-        let mut board_line = board
-            .get_board_line()
-            .map_err(|_| PlayerError::BoardError)?;
+
+        let mut board_line = board.get_board_line().map_err(|_| PlayerError::Board)?;
         board_line.push('\n');
-            
-        self.stdin.write(board_line.as_bytes()).unwrap();
+
         self.stdin
-            .flush()
-            .map_err(|_| PlayerError::IoError)?;
+            .write(board_line.as_bytes())
+            .map_err(|_| PlayerError::Io)?;
+        self.stdin.flush().map_err(|_| PlayerError::Io)?;
 
         let stdout = Arc::clone(&self.stdout);
-        
+
         let handle = thread::spawn(move || {
             let mut stdout = stdout.lock().unwrap();
             let mut response = String::new();
             let result = stdout
                 .read_line(&mut response)
-                .map_err(|_| PlayerError::IoError)
+                .map_err(|_| PlayerError::Io)
                 .and_then(|_| {
-                    response.trim().parse::<usize>()
-                        .map_err(|_| PlayerError::ParseError)
+                    response
+                        .trim()
+                        .parse::<usize>()
+                        .map_err(|_| PlayerError::Parse)
                 });
             tx.send(result).unwrap();
         });
@@ -70,7 +69,7 @@ where
             }
             Err(_) => {
                 handle.thread().unpark();
-                Err(PlayerError::TimeoutError)
+                Err(PlayerError::Timeout)
             }
         }
     }
@@ -85,7 +84,7 @@ enum GameResult {
 
 #[derive(Debug, Clone)]
 enum GameStatus {
-    FINISHED(GameResult),
+    Finished(GameResult),
     Playing,
 }
 
@@ -107,10 +106,7 @@ where
     W: Write + Send + 'static,
     R: BufRead + Send + 'static,
 {
-    fn new(
-        black_player: &'a mut Player<W, R>,
-        white_player: &'a mut Player<W, R>,
-    ) -> Self {
+    fn new(black_player: &'a mut Player<W, R>, white_player: &'a mut Player<W, R>) -> Self {
         Game {
             board: Board::new(),
             black_player,
@@ -127,21 +123,22 @@ where
             Turn::Black => &mut self.black_player,
             Turn::White => &mut self.white_player,
         };
-        player.get_move_with_timeout(&self.board, DEFAULT_TIMEOUT)
+        player
+            .get_move_with_timeout(&self.board, DEFAULT_TIMEOUT)
             .map_err(|e| match e {
-                PlayerError::IoError => match turn {
+                PlayerError::Io => match turn {
                     Turn::Black => GameError::BlackCrash,
                     Turn::White => GameError::WhiteCrash,
                 },
-                PlayerError::ParseError => match turn {
+                PlayerError::Parse => match turn {
                     Turn::Black => GameError::BlackInvalidMove,
                     Turn::White => GameError::WhiteInvalidMove,
                 },
-                PlayerError::TimeoutError => match turn {
+                PlayerError::Timeout => match turn {
                     Turn::Black => GameError::BlackTimeout,
                     Turn::White => GameError::WhiteTimeout,
                 },
-                PlayerError::BoardError => GameError::UnexpectedError,
+                PlayerError::Board => GameError::UnexpectedError,
             })
     }
 
@@ -152,58 +149,61 @@ where
                 self.moves.push(None);
                 continue;
             }
-            let mv = self.get_move()
-                .map_err(|e| return e)?;
-            self.board.do_move(mv)
-                .map_err(|e| match e {
-                    BoardError::InvalidMove => match self.board.get_board().2 {
-                        Turn::Black => return GameError::BlackInvalidMove,
-                        Turn::White => return GameError::WhiteInvalidMove,
-                    },
-                    BoardError::InvalidPosition => match self.board.get_board().2 {
-                        Turn::Black => return GameError::BlackInvalidMove,
-                        Turn::White => return GameError::WhiteInvalidMove,
-                    },
-                    _ => return GameError::UnexpectedError,
-                })?;
-                self.moves.push(Some(mv));
-                self.board_log.push(self.board.get_board());
+            let mv = self.get_move()?;
+            self.board.do_move(mv).map_err(|e| match e {
+                BoardError::InvalidMove => match self.board.get_board().2 {
+                    Turn::Black => GameError::BlackInvalidMove,
+                    Turn::White => GameError::WhiteInvalidMove,
+                },
+                BoardError::InvalidPosition => match self.board.get_board().2 {
+                    Turn::Black => GameError::BlackInvalidMove,
+                    Turn::White => GameError::WhiteInvalidMove,
+                },
+                _ => GameError::UnexpectedError,
+            })?;
+            self.moves.push(Some(mv));
+            self.board_log.push(self.board.get_board());
         }
 
         let winner = self.board.get_winner().unwrap();
         let black_pieces = self.board.black_piece_num() as usize;
         let white_pieces = self.board.white_piece_num() as usize;
         self.status = match winner {
-            Some(Turn::Black) => GameStatus::FINISHED(GameResult::BlackWin(black_pieces, white_pieces)),
-            Some(Turn::White) => GameStatus::FINISHED(GameResult::WhiteWin(black_pieces, white_pieces)),
-            None => GameStatus::FINISHED(GameResult::Draw(black_pieces, white_pieces)),
+            Some(Turn::Black) => {
+                GameStatus::Finished(GameResult::BlackWin(black_pieces, white_pieces))
+            }
+            Some(Turn::White) => {
+                GameStatus::Finished(GameResult::WhiteWin(black_pieces, white_pieces))
+            }
+            None => GameStatus::Finished(GameResult::Draw(black_pieces, white_pieces)),
         };
         Ok(())
     }
 
     fn get_result(&self) -> Result<GameResult, GameError> {
         match &self.status {
-            GameStatus::FINISHED(result) => Ok(result.clone()),
+            GameStatus::Finished(result) => Ok(result.clone()),
             GameStatus::Playing => Err(GameError::GameNotOverYet),
         }
     }
 }
 
-
 pub enum PlayerOrder {
     P1equalsBlack,
     P2equalsBlack,
 }
+type PlayerPair<W, R> = Arc<Mutex<(Player<W, R>, Player<W, R>)>>;
+
 pub struct Arena<W, R>
 where
     W: Write + Send + 'static,
     R: BufRead + Send + 'static,
 {
     games: Vec<(PlayerOrder, GameResult)>,
-    players: Vec<Arc<Mutex<(Player<W, R>, Player<W, R>)>>>,
+    players: Vec<PlayerPair<W, R>>,
 }
 
-impl <W, R> Arena<W, R>
+impl<W, R> Arena<W, R>
 where
     W: Write + Send + 'static,
     R: BufRead + Send + 'static,
@@ -211,7 +211,10 @@ where
     pub fn new(players: Vec<(Player<W, R>, Player<W, R>)>) -> Self {
         Arena {
             games: Vec::new(),
-            players: players.into_iter().map(|(p1, p2)| Arc::new(Mutex::new((p1, p2)))).collect(),
+            players: players
+                .into_iter()
+                .map(|(p1, p2)| Arc::new(Mutex::new((p1, p2))))
+                .collect(),
         }
     }
 
@@ -281,7 +284,6 @@ where
                             (_, Err(e)) => {
                                 return Err(ArenaError::GameError(e));
                             }
-                            
                         }
                     }
                 }
@@ -299,17 +301,13 @@ where
         let mut draw = 0;
         for (order, game_result) in self.games.iter() {
             match game_result {
-                GameResult::BlackWin(_, _) => {
-                    match order {
-                        PlayerOrder::P1equalsBlack => p1_win += 1,
-                        PlayerOrder::P2equalsBlack => p2_win += 1,
-                    }
+                GameResult::BlackWin(_, _) => match order {
+                    PlayerOrder::P1equalsBlack => p1_win += 1,
+                    PlayerOrder::P2equalsBlack => p2_win += 1,
                 },
-                GameResult::WhiteWin(_, _) => {
-                    match order {
-                        PlayerOrder::P1equalsBlack => p2_win += 1,
-                        PlayerOrder::P2equalsBlack => p1_win += 1,
-                    }
+                GameResult::WhiteWin(_, _) => match order {
+                    PlayerOrder::P1equalsBlack => p2_win += 1,
+                    PlayerOrder::P2equalsBlack => p1_win += 1,
                 },
                 GameResult::Draw(_, _) => draw += 1,
             }
@@ -322,34 +320,30 @@ where
         let mut p2_pieces = 0;
         for (order, game_result) in self.games.iter() {
             match game_result {
-                GameResult::BlackWin(black_pieces, white_pieces) => {
-                    match order {
-                        PlayerOrder::P1equalsBlack => {
-                            p1_pieces += black_pieces;
-                            p2_pieces += white_pieces;
-                        }
-                        PlayerOrder::P2equalsBlack => {
-                            p1_pieces += white_pieces;
-                            p2_pieces += black_pieces;
-                        }
+                GameResult::BlackWin(black_pieces, white_pieces) => match order {
+                    PlayerOrder::P1equalsBlack => {
+                        p1_pieces += black_pieces;
+                        p2_pieces += white_pieces;
+                    }
+                    PlayerOrder::P2equalsBlack => {
+                        p1_pieces += white_pieces;
+                        p2_pieces += black_pieces;
                     }
                 },
-                GameResult::WhiteWin(black_pieces, white_pieces) => {
-                    match order {
-                        PlayerOrder::P1equalsBlack => {
-                            p2_pieces += white_pieces;
-                            p1_pieces += black_pieces;
-                        }
-                        PlayerOrder::P2equalsBlack => {
-                            p2_pieces += black_pieces;
-                            p1_pieces += white_pieces;
-                        }
+                GameResult::WhiteWin(black_pieces, white_pieces) => match order {
+                    PlayerOrder::P1equalsBlack => {
+                        p2_pieces += white_pieces;
+                        p1_pieces += black_pieces;
+                    }
+                    PlayerOrder::P2equalsBlack => {
+                        p2_pieces += black_pieces;
+                        p1_pieces += white_pieces;
                     }
                 },
                 GameResult::Draw(black_pieces, white_pieces) => {
                     p1_pieces += black_pieces;
                     p2_pieces += white_pieces;
-                },
+                }
             }
         }
         (p1_pieces, p2_pieces)

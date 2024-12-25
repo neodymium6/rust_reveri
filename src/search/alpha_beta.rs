@@ -1,5 +1,5 @@
-use crate::search::evaluator::Evaluator;
 use crate::board::core::Board;
+use crate::search::evaluator::Evaluator;
 
 pub struct AlphaBetaSearch {
     max_depth: usize,
@@ -31,19 +31,19 @@ impl AlphaBetaSearch {
                     return current_alpha;
                 }
             }
-            return current_alpha;
+            current_alpha
         } else {
             // pass
             let mut new_board = board.clone();
             new_board.do_pass().unwrap();
-            return -self.get_search_socre(new_board, depth - 1, -beta, -alpha);
+            -self.get_search_socre(new_board, depth - 1, -beta, -alpha)
         }
     }
 
     pub fn get_move(&self, board: Board) -> Option<usize> {
         let mut best_move = None;
-        let mut alpha = std::i32::MIN+1;
-        let beta = std::i32::MAX-1;
+        let mut alpha = i32::MIN + 1;
+        let beta = i32::MAX - 1;
         for move_i in board.get_legal_moves_vec() {
             let mut new_board = board.clone();
             new_board.do_move(move_i).unwrap();

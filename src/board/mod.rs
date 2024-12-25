@@ -1,7 +1,7 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 pub(crate) mod core;
-use core::{Turn as RustTurn, Color as RustColor, Board as RustBoard, BoardError};
+use core::{Board as RustBoard, BoardError, Color as RustColor, Turn as RustTurn};
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]
@@ -12,9 +12,13 @@ pub struct Turn {
 #[pymethods]
 impl Turn {
     #[classattr]
-    const BLACK: Self = Turn { inner: RustTurn::Black };
+    const BLACK: Self = Turn {
+        inner: RustTurn::Black,
+    };
     #[classattr]
-    const WHITE: Self = Turn { inner: RustTurn::White };
+    const WHITE: Self = Turn {
+        inner: RustTurn::White,
+    };
 
     fn __str__(&self) -> &'static str {
         match self.inner {
@@ -33,11 +37,17 @@ pub struct Color {
 #[pymethods]
 impl Color {
     #[classattr]
-    const EMPTY: Self = Color { inner: RustColor::Empty };
+    const EMPTY: Self = Color {
+        inner: RustColor::Empty,
+    };
     #[classattr]
-    const BLACK: Self = Color { inner: RustColor::Black };
+    const BLACK: Self = Color {
+        inner: RustColor::Black,
+    };
     #[classattr]
-    const WHITE: Self = Color { inner: RustColor::White };
+    const WHITE: Self = Color {
+        inner: RustColor::White,
+    };
 
     fn __str__(&self) -> &'static str {
         match self.inner {
@@ -72,26 +82,29 @@ impl Board {
     }
 
     fn set_board(&mut self, player_board: u64, opponent_board: u64, turn: Turn) {
-        self.inner.set_board(player_board, opponent_board, turn.inner);
+        self.inner
+            .set_board(player_board, opponent_board, turn.inner);
     }
 
     fn set_board_str(&mut self, line: &str, turn: Turn) -> PyResult<()> {
-        self.inner.set_board_str(line, turn.inner).map_err(|e| match e {
-            BoardError::InvalidCharactor => PyValueError::new_err("Invalid charactor"),
-            _ => PyValueError::new_err("Unexpected error"),
-        })
-    }
-
-    fn get_board_line(&self) -> PyResult<String> {
-        self.inner.get_board_line()
+        self.inner
+            .set_board_str(line, turn.inner)
             .map_err(|e| match e {
-                BoardError::InvalidState => PyValueError::new_err("Invalid state"),
+                BoardError::InvalidCharactor => PyValueError::new_err("Invalid charactor"),
                 _ => PyValueError::new_err("Unexpected error"),
             })
     }
 
+    fn get_board_line(&self) -> PyResult<String> {
+        self.inner.get_board_line().map_err(|e| match e {
+            BoardError::InvalidState => PyValueError::new_err("Invalid state"),
+            _ => PyValueError::new_err("Unexpected error"),
+        })
+    }
+
     fn get_board_vec_black(&self) -> PyResult<Vec<Color>> {
-        self.inner.get_board_vec_black()
+        self.inner
+            .get_board_vec_black()
             .map(|vec| {
                 vec.into_iter()
                     .map(|color| Color { inner: color })
@@ -104,7 +117,8 @@ impl Board {
     }
 
     fn get_board_vec_turn(&self) -> PyResult<Vec<Color>> {
-        self.inner.get_board_vec_turn()
+        self.inner
+            .get_board_vec_turn()
             .map(|vec| {
                 vec.into_iter()
                     .map(|color| Color { inner: color })
@@ -117,11 +131,10 @@ impl Board {
     }
 
     fn get_board_matrix(&self) -> PyResult<Vec<Vec<Vec<i32>>>> {
-        self.inner.get_board_matrix()
-            .map_err(|e| match e {
-                BoardError::InvalidState => PyValueError::new_err("Invalid state"),
-                _ => PyValueError::new_err("Unexpected error"),
-            })
+        self.inner.get_board_matrix().map_err(|e| match e {
+            BoardError::InvalidState => PyValueError::new_err("Invalid state"),
+            _ => PyValueError::new_err("Unexpected error"),
+        })
     }
 
     fn player_piece_num(&self) -> i32 {
@@ -165,12 +178,12 @@ impl Board {
     }
 
     fn get_child_boards(&self) -> Option<Vec<Board>> {
-        match self.inner.get_child_boards() {
-            Some(board_vec) => {
-                Some(board_vec.into_iter().map(|board| Board { inner: board }).collect())
-            }
-            None => None,
-        }
+        self.inner.get_child_boards().map(|board_vec| {
+            board_vec
+                .into_iter()
+                .map(|board| Board { inner: board })
+                .collect()
+        })
     }
 
     fn do_move(&mut self, pos: usize) -> PyResult<()> {
@@ -250,11 +263,10 @@ impl Board {
     }
 
     fn __str__(&self) -> PyResult<String> {
-        self.inner.to_string()
-            .map_err(|e| match e {
-                BoardError::InvalidState => PyValueError::new_err("Invalid state"),
-                _ => PyValueError::new_err("Unexpected error"),
-            })
+        self.inner.to_string().map_err(|e| match e {
+            BoardError::InvalidState => PyValueError::new_err("Invalid state"),
+            _ => PyValueError::new_err("Unexpected error"),
+        })
     }
 
     fn clone(&self) -> Self {

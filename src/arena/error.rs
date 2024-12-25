@@ -1,9 +1,9 @@
 #[derive(Debug)]
 pub enum PlayerError {
-    IoError,
-    ParseError,
-    TimeoutError,
-    BoardError,
+    Io,
+    Parse,
+    Timeout,
+    Board,
 }
 
 #[derive(Debug)]
@@ -39,7 +39,6 @@ impl From<std::io::Error> for ClientManagerError {
     fn from(e: std::io::Error) -> Self {
         ClientManagerError::IoError(e)
     }
-    
 }
 
 #[derive(Debug)]

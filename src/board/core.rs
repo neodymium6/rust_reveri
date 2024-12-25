@@ -20,7 +20,7 @@ pub enum BoardError {
 #[derive(Clone, Copy, PartialEq)]
 pub enum Turn {
     Black,
-    White, 
+    White,
 }
 
 impl Turn {
@@ -49,7 +49,7 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Board {
     player_board: u64,
     opponent_board: u64,
@@ -57,23 +57,85 @@ pub struct Board {
 }
 
 const BITS: [u64; 64] = [
-    1 << 63, 1 << 62, 1 << 61, 1 << 60, 1 << 59, 1 << 58, 1 << 57, 1 << 56,
-    1 << 55, 1 << 54, 1 << 53, 1 << 52, 1 << 51, 1 << 50, 1 << 49, 1 << 48,
-    1 << 47, 1 << 46, 1 << 45, 1 << 44, 1 << 43, 1 << 42, 1 << 41, 1 << 40,
-    1 << 39, 1 << 38, 1 << 37, 1 << 36, 1 << 35, 1 << 34, 1 << 33, 1 << 32,
-    1 << 31, 1 << 30, 1 << 29, 1 << 28, 1 << 27, 1 << 26, 1 << 25, 1 << 24,
-    1 << 23, 1 << 22, 1 << 21, 1 << 20, 1 << 19, 1 << 18, 1 << 17, 1 << 16,
-    1 << 15, 1 << 14, 1 << 13, 1 << 12, 1 << 11, 1 << 10, 1 <<  9, 1 <<  8,
-    1 <<  7, 1 <<  6, 1 <<  5, 1 <<  4, 1 <<  3, 1 <<  2, 1 <<  1, 1 <<  0,
+    1 << 63,
+    1 << 62,
+    1 << 61,
+    1 << 60,
+    1 << 59,
+    1 << 58,
+    1 << 57,
+    1 << 56,
+    1 << 55,
+    1 << 54,
+    1 << 53,
+    1 << 52,
+    1 << 51,
+    1 << 50,
+    1 << 49,
+    1 << 48,
+    1 << 47,
+    1 << 46,
+    1 << 45,
+    1 << 44,
+    1 << 43,
+    1 << 42,
+    1 << 41,
+    1 << 40,
+    1 << 39,
+    1 << 38,
+    1 << 37,
+    1 << 36,
+    1 << 35,
+    1 << 34,
+    1 << 33,
+    1 << 32,
+    1 << 31,
+    1 << 30,
+    1 << 29,
+    1 << 28,
+    1 << 27,
+    1 << 26,
+    1 << 25,
+    1 << 24,
+    1 << 23,
+    1 << 22,
+    1 << 21,
+    1 << 20,
+    1 << 19,
+    1 << 18,
+    1 << 17,
+    1 << 16,
+    1 << 15,
+    1 << 14,
+    1 << 13,
+    1 << 12,
+    1 << 11,
+    1 << 10,
+    1 << 9,
+    1 << 8,
+    1 << 7,
+    1 << 6,
+    1 << 5,
+    1 << 4,
+    1 << 3,
+    1 << 2,
+    1 << 1,
+    1 << 0,
 ];
 
-impl Board {
-    pub fn new() -> Board {
+impl Default for Board {
+    fn default() -> Self {
         Board {
             player_board: 0x00_00_00_08_10_00_00_00,
             opponent_board: 0x00_00_00_10_08_00_00_00,
             turn: Turn::Black,
         }
+    }
+}
+
+impl Board {
+    pub fn new() -> Board {
+        Board::default()
     }
 
     fn pos2bit(pos: usize) -> u64 {
@@ -134,14 +196,14 @@ impl Board {
 
     pub fn get_board_vec_black(&self) -> Result<Vec<Color>, BoardError> {
         let mut board_vec = vec![Color::Empty; BOARD_SIZE * BOARD_SIZE];
-        for i in 0..BOARD_SIZE * BOARD_SIZE {
+        for (i, board_vec_elem) in board_vec.iter_mut().enumerate() {
             let bit = Board::pos2bit(i);
-            match (self.player_board & bit, self.opponent_board & bit) {
-                (0, 0) => board_vec[i] = Color::Empty,
-                (_, 0) => board_vec[i] = Color::Black,
-                (0, _) => board_vec[i] = Color::White,
+            *board_vec_elem = match (self.player_board & bit, self.opponent_board & bit) {
+                (0, 0) => Color::Empty,
+                (_, 0) => Color::Black,
+                (0, _) => Color::White,
                 (_, _) => return Err(BoardError::InvalidState),
-            }
+            };
         }
         Ok(board_vec)
     }
@@ -153,14 +215,14 @@ impl Board {
             Turn::White => Color::White,
         };
         let opponent_color = player_color.opposite();
-        for i in 0..BOARD_SIZE * BOARD_SIZE {
+        for (i, board_vec_elem) in board_vec.iter_mut().enumerate() {
             let bit = Board::pos2bit(i);
-            match (self.player_board & bit, self.opponent_board & bit) {
-                (0, 0) => board_vec[i] = Color::Empty,
-                (_, 0) => board_vec[i] = player_color,
-                (0, _) => board_vec[i] = opponent_color,
+            *board_vec_elem = match (self.player_board & bit, self.opponent_board & bit) {
+                (0, 0) => Color::Empty,
+                (_, 0) => player_color,
+                (0, _) => opponent_color,
                 (_, _) => return Err(BoardError::InvalidState),
-            }
+            };
         }
         Ok(board_vec)
     }
@@ -231,12 +293,11 @@ impl Board {
 
     pub fn get_legal_moves(&self) -> u64 {
         let mask = 0x7E_7E_7E_7E_7E_7E_7E_7E & self.opponent_board;
-        (
-            Board::get_legal_partial(mask, self.player_board, 1) |
-            Board::get_legal_partial(self.opponent_board, self.player_board, 8) |
-            Board::get_legal_partial(mask, self.player_board, 9) |
-            Board::get_legal_partial(mask, self.player_board, 7)
-        ) & !(self.player_board | self.opponent_board)
+        (Board::get_legal_partial(mask, self.player_board, 1)
+            | Board::get_legal_partial(self.opponent_board, self.player_board, 8)
+            | Board::get_legal_partial(mask, self.player_board, 9)
+            | Board::get_legal_partial(mask, self.player_board, 7))
+            & !(self.player_board | self.opponent_board)
     }
 
     pub fn get_legal_moves_vec(&self) -> Vec<usize> {
@@ -530,7 +591,6 @@ impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_string().unwrap())
     }
-    
 }
 
 #[cfg(test)]

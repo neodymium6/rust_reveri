@@ -1,9 +1,11 @@
-use crate::board::core::Turn;
+use crate::arena::core::{Arena, Player};
 use crate::arena::error::ArenaError;
-use crate::arena::core::{Player, Arena};
+use crate::board::core::Turn;
 use std::process::Stdio;
-use std::{io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, ChildStdout, Command}};
-
+use std::{
+    io::{BufRead, BufReader, Write},
+    process::{Child, ChildStdin, ChildStdout, Command},
+};
 
 #[derive(Debug)]
 pub struct LocalArena {
@@ -14,6 +16,10 @@ pub struct LocalArena {
 }
 
 type ProcessPlayer = Player<ChildStdin, BufReader<ChildStdout>>;
+type ProcessTuple = (Child, ChildStdin, BufReader<ChildStdout>);
+type ProcessResult = Result<(ProcessTuple, ProcessTuple), ArenaError>;
+type ProcessPair = (Child, Child);
+type PlayerPair = (ProcessPlayer, ProcessPlayer);
 impl LocalArena {
     pub fn new(command1: Vec<String>, command2: Vec<String>) -> Self {
         LocalArena {
@@ -24,75 +30,78 @@ impl LocalArena {
         }
     }
 
-    fn start_process(command: &[String], turn: Turn) -> Result<(Child, ChildStdin, BufReader<ChildStdout>), std::io::Error> {
+    fn start_process(
+        command: &[String],
+        turn: Turn,
+    ) -> Result<(Child, ChildStdin, BufReader<ChildStdout>), std::io::Error> {
         let mut cmd = Command::new(&command[0]);
         for arg in command.iter().skip(1) {
             cmd.arg(arg);
         }
-    
+
         match turn {
             Turn::Black => cmd.arg("BLACK"),
             Turn::White => cmd.arg("WHITE"),
         };
-    
-        let mut process = cmd
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()?;
-    
+
+        let mut process = cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).spawn()?;
+
         let mut stdin = process.stdin.take().unwrap();
         let stdout = process.stdout.take().unwrap();
-    
+
         // ping-pong test
         writeln!(stdin, "ping")
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Write error"))?;
-        stdin.flush()
+        stdin
+            .flush()
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Flush error"))?;
-    
+
         let mut reader = BufReader::new(stdout);
         let mut response = String::new();
-        reader.read_line(&mut response)
+        reader
+            .read_line(&mut response)
             .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Read error"))?;
-        
+
         if response.trim() != "pong" {
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Invalid response"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Invalid response",
+            ));
         }
-    
+
         Ok((process, stdin, reader))
     }
-    
-    fn init_processes(&self, p1_turn: Turn) -> Result<((Child, ChildStdin, BufReader<ChildStdout>), (Child, ChildStdin, BufReader<ChildStdout>)), ArenaError> {
+
+    fn init_processes(&self, p1_turn: Turn) -> ProcessResult {
         let (process1, stdin1, stdout1) = Self::start_process(&self.command1, p1_turn)
             .map_err(|_| ArenaError::EngineStartError)?;
 
         let p2_turn = p1_turn.opposite();
         let (process2, stdin2, stdout2) = Self::start_process(&self.command2, p2_turn)
             .map_err(|_| ArenaError::EngineStartError)?;
-    
+
         Ok(((process1, stdin1, stdout1), (process2, stdin2, stdout2)))
     }
-    
-    fn get_players(&mut self) -> Result<(
-        Vec<(Child, Child)>,
-        Vec<(ProcessPlayer, ProcessPlayer)>
-    ), ArenaError> {
+
+    fn get_players(&mut self) -> Result<(Vec<ProcessPair>, Vec<PlayerPair>), ArenaError> {
         // P1equalsBlack
-        let ((process1, stdin1, stdout1), (process2, stdin2, stdout2)) = self.init_processes(Turn::Black)?;
+        let ((process1, stdin1, stdout1), (process2, stdin2, stdout2)) =
+            self.init_processes(Turn::Black)?;
         let player_1b = Player::new(stdin1, stdout1);
         let player_2w = Player::new(stdin2, stdout2);
-        
+
         // P2equalsBlack
-        let ((process3, stdin3, stdout3), (process4, stdin4, stdout4)) = self.init_processes(Turn::White)?;
+        let ((process3, stdin3, stdout3), (process4, stdin4, stdout4)) =
+            self.init_processes(Turn::White)?;
         let player_2b = Player::new(stdin4, stdout4);
         let player_1w = Player::new(stdin3, stdout3);
-        
+
         Ok((
             vec![(process1, process2), (process3, process4)],
-            vec![(player_1b, player_2w), (player_2b, player_1w)]
+            vec![(player_1b, player_2w), (player_2b, player_1w)],
         ))
     }
 
-    
     pub fn play_n(&mut self, n: usize) -> Result<(), ArenaError> {
         let (mut processes, players) = self.get_players()?;
 
