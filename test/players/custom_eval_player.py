@@ -18,6 +18,9 @@ EVAL_MATRIX = [
 
 
 class CustomEvaluator(Evaluator):
+    def __init__(self):
+        super().set_py_evaluator(self)
+
     def evaluate(self, board: Board) -> int:
         board_vec = board.get_board_vec_black()
         score = 0
