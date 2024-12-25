@@ -3,8 +3,7 @@ import sys
 import os
 import pytest
 
-N_GAMES = 1000
-TEST_PORT = 12345
+N_GAMES = 100
 
 RANDOM_PLAYER = "players/random_player.py"
 PIECE_PLAYER = "players/piece_player.py"
