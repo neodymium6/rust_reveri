@@ -10,7 +10,7 @@ use crate::board::Board;
 use alpha_beta::AlphaBetaSearch as RustAlphaBetaSearch;
 use evaluator::{
     Evaluator as RustEvaluator, LegalNumEvaluator as RustLegalNumEvaluator,
-    PieceEvaluator as RustPieceEvaluator,
+    MatrixEvaluator as RustMatrixEvaluator, PieceEvaluator as RustPieceEvaluator,
 };
 
 #[derive(Clone)]
@@ -37,6 +37,7 @@ impl RustEvaluator for PyEvaluator {
 enum EvaluatorType {
     Piece(RustPieceEvaluator),
     LegalNum(RustLegalNumEvaluator),
+    Matrix(Box<RustMatrixEvaluator>),
     Python(PyEvaluator),
 }
 
@@ -45,6 +46,7 @@ impl EvaluatorType {
         match self {
             EvaluatorType::Piece(e) => Box::new(e.clone()),
             EvaluatorType::LegalNum(e) => Box::new(e.clone()),
+            EvaluatorType::Matrix(e) => e.clone(),
             EvaluatorType::Python(e) => Box::new(e.clone()),
         }
     }
@@ -108,6 +110,20 @@ impl LegalNumEvaluator {
             inner: EvaluatorType::LegalNum(RustLegalNumEvaluator {}),
         };
         (LegalNumEvaluator {}, evaluator)
+    }
+}
+
+#[pyclass(extends=Evaluator)]
+pub struct MatrixEvaluator {}
+
+#[pymethods]
+impl MatrixEvaluator {
+    #[new]
+    fn new(matrix: [[i32; 8]; 8]) -> (Self, Evaluator) {
+        let evaluator = Evaluator {
+            inner: EvaluatorType::Matrix(Box::new(RustMatrixEvaluator::new(matrix))),
+        };
+        (MatrixEvaluator {}, evaluator)
     }
 }
 
