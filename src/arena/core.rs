@@ -1,11 +1,11 @@
 use crate::arena::error::{ArenaError, GameError, PlayerError};
 use crate::board::core::{Board, BoardError, Turn};
+use indicatif::{MultiProgress, ProgressBar};
 use std::io::{BufRead, Write};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use tqdm::pbar;
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -227,9 +227,9 @@ where
         let players0 = Arc::clone(&self.players[0]);
         let players1 = Arc::clone(&self.players[1]);
 
-        let pb = Arc::new(Mutex::new(pbar(Some(n))));
-        let pb1 = Arc::clone(&pb);
-        let pb2 = Arc::clone(&pb);
+        let m = MultiProgress::new();
+        let pb1 = m.add(ProgressBar::new(half_n as u64));
+        let pb2 = m.add(ProgressBar::new(half_n as u64));
 
         let mut handles = vec![];
         // p1equalsBlack
@@ -247,7 +247,7 @@ where
                         }
                         Err(e) => return Err(ArenaError::GameError(e)),
                     }
-                    pb1.lock().unwrap().update(1).unwrap();
+                    pb1.inc(1);
                 }
                 Ok(results)
             }));
@@ -268,7 +268,7 @@ where
                         }
                         Err(e) => return Err(ArenaError::GameError(e)),
                     }
-                    pb2.lock().unwrap().update(1).unwrap();
+                    pb2.inc(1);
                 }
                 Ok(results)
             }));
