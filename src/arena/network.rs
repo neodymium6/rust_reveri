@@ -222,7 +222,6 @@ impl ClientManager {
         for i in 0..2 {
             if self.clients[i].is_none() {
                 stream.set_read_timeout(Some(READ_TIMEOUT))?;
-                // .map_err(ClientManagerError::from)?;
                 self.clients[i] = Some(stream);
                 println!("Client {} connected", i);
                 return Ok(());
