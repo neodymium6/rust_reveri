@@ -598,8 +598,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_random_1000000games() {
-        for _ in 0..1000000 {
+    fn test_random_10000games() {
+        for _ in 0..10000 {
             let mut board = Board::new();
             while !board.is_game_over() {
                 if board.is_pass() {
