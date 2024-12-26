@@ -14,15 +14,26 @@ impl AlphaBetaSearch {
         }
     }
 
-    pub fn get_search_socre(&self, board: Board, depth: usize, alpha: i32, beta: i32) -> i32 {
-        if depth == 0 || board.is_game_over() {
-            return self.evaluator.evaluate(&board);
+    pub fn get_search_socre(&self, board: &Board, depth: usize, alpha: i32, beta: i32) -> i32 {
+        if board.is_game_over() {
+            match board.is_win() {
+                Ok(true) => return i32::MAX - 2,
+                Ok(false) => match board.is_lose() {
+                    Ok(true) => return i32::MIN + 2,
+                    Ok(false) => return 0,
+                    Err(_) => return 0,
+                },
+                Err(_) => return 0,
+            }
+        }
+        if depth == 0 {
+            return self.evaluator.evaluate(board);
         }
 
         let mut current_alpha = alpha;
         if let Some(child_boards) = board.get_child_boards() {
             for child_board in child_boards {
-                let score = -self.get_search_socre(child_board, depth - 1, -beta, -current_alpha);
+                let score = -self.get_search_socre(&child_board, depth - 1, -beta, -current_alpha);
                 if score > current_alpha {
                     current_alpha = score;
                 }
@@ -36,7 +47,7 @@ impl AlphaBetaSearch {
             // pass
             let mut new_board = board.clone();
             new_board.do_pass().unwrap();
-            -self.get_search_socre(new_board, depth - 1, -beta, -alpha)
+            -self.get_search_socre(&new_board, depth, -beta, -alpha)
         }
     }
 
@@ -47,7 +58,7 @@ impl AlphaBetaSearch {
         for move_i in board.get_legal_moves_vec() {
             let mut new_board = board.clone();
             new_board.do_move(move_i).unwrap();
-            let score = -self.get_search_socre(new_board, self.max_depth, -beta, -alpha);
+            let score = -self.get_search_socre(&new_board, self.max_depth, -beta, -alpha);
             if score > alpha {
                 alpha = score;
                 best_move = Some(move_i);
