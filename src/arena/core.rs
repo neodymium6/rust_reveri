@@ -1,6 +1,6 @@
 use crate::arena::error::{ArenaError, GameError, PlayerError};
 use crate::board::core::{Board, BoardError, Turn};
-use indicatif::{MultiProgress, ProgressBar};
+use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use std::io::{BufRead, Write};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
@@ -201,6 +201,7 @@ where
 {
     games: Vec<(PlayerOrder, GameResult)>,
     players: Vec<PlayerPair<W, R>>,
+    show_progress: bool,
 }
 
 impl<W, R> Arena<W, R>
@@ -208,13 +209,14 @@ where
     W: Write + Send + 'static,
     R: BufRead + Send + 'static,
 {
-    pub fn new(players: Vec<(Player<W, R>, Player<W, R>)>) -> Self {
+    pub fn new(players: Vec<(Player<W, R>, Player<W, R>)>, show_progress: bool) -> Self {
         Arena {
             games: Vec::new(),
             players: players
                 .into_iter()
                 .map(|(p1, p2)| Arc::new(Mutex::new((p1, p2))))
                 .collect(),
+            show_progress,
         }
     }
 
@@ -227,9 +229,46 @@ where
         let players0 = Arc::clone(&self.players[0]);
         let players1 = Arc::clone(&self.players[1]);
 
-        let m = MultiProgress::new();
-        let pb1 = m.add(ProgressBar::new(half_n as u64));
-        let pb2 = m.add(ProgressBar::new(half_n as u64));
+        let m = match self.show_progress {
+            true => Some(MultiProgress::new()),
+            false => None,
+        };
+        let pb1 = match m {
+            Some(ref m) => {
+                let pb = m.add(ProgressBar::new(half_n as u64));
+                pb.set_style(
+                    ProgressStyle::with_template("[{wide_bar}] [{elapsed_precise}] ({eta})")
+                        .unwrap()
+                        .with_key(
+                            "eta",
+                            |state: &ProgressState, w: &mut dyn std::fmt::Write| {
+                                write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
+                            },
+                        )
+                        .progress_chars("#>-"),
+                );
+                Some(pb)
+            }
+            None => None,
+        };
+        let pb2 = match m {
+            Some(ref m) => {
+                let pb = m.add(ProgressBar::new(half_n as u64));
+                pb.set_style(
+                    ProgressStyle::with_template("[{wide_bar}] [{elapsed_precise}] ({eta})")
+                        .unwrap()
+                        .with_key(
+                            "eta",
+                            |state: &ProgressState, w: &mut dyn std::fmt::Write| {
+                                write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
+                            },
+                        )
+                        .progress_chars("#>-"),
+                );
+                Some(pb)
+            }
+            None => None,
+        };
 
         let mut handles = vec![];
         // p1equalsBlack
@@ -247,7 +286,9 @@ where
                         }
                         Err(e) => return Err(ArenaError::GameError(e)),
                     }
-                    pb1.inc(1);
+                    if let Some(ref pb1) = pb1 {
+                        pb1.inc(1);
+                    }
                 }
                 Ok(results)
             }));
@@ -268,7 +309,9 @@ where
                         }
                         Err(e) => return Err(ArenaError::GameError(e)),
                     }
-                    pb2.inc(1);
+                    if let Some(ref pb2) = pb2 {
+                        pb2.inc(1);
+                    }
                 }
                 Ok(results)
             }));

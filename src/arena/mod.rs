@@ -18,9 +18,10 @@ pub struct Arena {
 #[pymethods]
 impl Arena {
     #[new]
-    fn new(command1: Vec<String>, command2: Vec<String>) -> Self {
+    #[pyo3(signature = (command1, command2, show_progress=None))]
+    fn new(command1: Vec<String>, command2: Vec<String>, show_progress: Option<bool>) -> Self {
         Arena {
-            inner: RustLocalArena::new(command1, command2),
+            inner: RustLocalArena::new(command1, command2, show_progress.unwrap_or(true)),
         }
     }
 
@@ -58,8 +59,9 @@ pub struct NetworkArenaServer {
 #[pymethods]
 impl NetworkArenaServer {
     #[new]
-    fn new(game_per_iter: usize) -> PyResult<Self> {
-        match RustNetworkArenaServer::new(game_per_iter) {
+    #[pyo3(signature = (game_per_iter, show_progress=None))]
+    fn new(game_per_iter: usize, show_progress: Option<bool>) -> PyResult<Self> {
+        match RustNetworkArenaServer::new(game_per_iter, show_progress.unwrap_or(true)) {
             Ok(inner) => Ok(NetworkArenaServer { inner }),
             Err(e) => match e {
                 NetworkArenaServerError::IoError(e) => Err(PyValueError::new_err(format!(

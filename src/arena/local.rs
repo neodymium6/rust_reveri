@@ -13,6 +13,7 @@ pub struct LocalArena {
     command2: Vec<String>,
     stats: (usize, usize, usize),
     pieces: (usize, usize),
+    show_progress: bool,
 }
 
 type ProcessPlayer = Player<ChildStdin, BufReader<ChildStdout>>;
@@ -21,12 +22,13 @@ type ProcessResult = Result<(ProcessTuple, ProcessTuple), ArenaError>;
 type ProcessPair = (Child, Child);
 type PlayerPair = (ProcessPlayer, ProcessPlayer);
 impl LocalArena {
-    pub fn new(command1: Vec<String>, command2: Vec<String>) -> Self {
+    pub fn new(command1: Vec<String>, command2: Vec<String>, show_progress: bool) -> Self {
         LocalArena {
             command1,
             command2,
             stats: (0, 0, 0),
             pieces: (0, 0),
+            show_progress,
         }
     }
 
@@ -105,7 +107,7 @@ impl LocalArena {
     pub fn play_n(&mut self, n: usize) -> Result<(), ArenaError> {
         let (mut processes, players) = self.get_players()?;
 
-        let mut arena = Arena::new(players);
+        let mut arena = Arena::new(players, self.show_progress);
         arena.play_n(n)?;
         let (p1_win, p2_win, draw) = arena.get_stats();
         self.stats.0 += p1_win;

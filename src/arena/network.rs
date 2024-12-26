@@ -395,16 +395,18 @@ impl ClientManager {
 pub struct NetworkArenaServer {
     game_per_iter: usize,
     client_manager: ClientManager,
+    show_progress: bool,
 }
 
 impl NetworkArenaServer {
-    pub fn new(game_per_iter: usize) -> Result<Self, NetworkArenaServerError> {
+    pub fn new(game_per_iter: usize, show_progress: bool) -> Result<Self, NetworkArenaServerError> {
         if game_per_iter % 2 != 0 {
             return Err(NetworkArenaServerError::GameNumberInvalid);
         }
         Ok(NetworkArenaServer {
             game_per_iter,
             client_manager: ClientManager::new(),
+            show_progress,
         })
     }
 
@@ -437,7 +439,7 @@ impl NetworkArenaServer {
             return Err(NetworkArenaServerError::ClientNotReady);
         }
         let players = self.client_manager.get_players()?;
-        let mut arena = Arena::new(players);
+        let mut arena = Arena::new(players, self.show_progress);
         arena.play_n(self.game_per_iter)?;
 
         let (p1_win, p2_win, draw) = arena.get_stats();
