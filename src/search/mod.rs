@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 
 mod alpha_beta;
 mod evaluator;
+mod time_keeper;
 
 use crate::board::core::Board as RustBoard;
 use crate::board::Board;
@@ -144,5 +145,11 @@ impl AlphaBetaSearch {
 
     fn get_move(&self, board: Board) -> Option<usize> {
         self.inner.get_move(board.inner)
+    }
+
+    fn get_move_with_iter_deepening(&self, board: Board, timeout_ms: u64) -> Option<usize> {
+        let timeout = std::time::Duration::from_millis(timeout_ms);
+        self.inner
+            .get_move_with_iter_deepening(board.inner, timeout)
     }
 }

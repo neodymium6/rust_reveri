@@ -327,7 +327,8 @@ Alpha-beta pruning based search for finding best moves.
 
 ###### AlphaBetaSearch Methods
 
-- `get_move(board: Board) -> Optional[int]`: Returns best move found within specified depth
+- `get_move(board: Board) -> int`: Returns best move found within specified depth
+- `get_move_with_iter_deepening(board: Board, timeout_ms: int) -> int`: Returns best move found with iterative deepening up to timeout in milliseconds
 
 #### Arena Classes
 
