@@ -1,4 +1,5 @@
 use core::fmt;
+use std::hash::Hash;
 use std::mem::swap;
 
 const BOARD_SIZE: usize = 8;
@@ -17,7 +18,7 @@ pub enum BoardError {
     NoLegalMove,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Turn {
     Black,
     White,
@@ -49,7 +50,7 @@ impl Color {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Board {
     player_board: u64,
     opponent_board: u64,
