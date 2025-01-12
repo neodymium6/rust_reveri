@@ -254,8 +254,17 @@ dependencies = [
 name = "rust_reversi"
 version = "1.3.6"
 dependencies = [
- "indicatif",
  "pyo3",
+ "rust_reversi_core",
+]
+
+[[package]]
+name = "rust_reversi_core"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01207961b21c52f34b8186f736350ac9c6f61dad78b627514435c7afe171ca3a"
+dependencies = [
+ "indicatif",
  "rand",
 ]
 

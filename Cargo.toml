@@ -10,5 +10,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = "0.23.1"
-rand = "0.8.5"
-indicatif = "0.17.9"
+rust_reversi_core = "0.1.5"
