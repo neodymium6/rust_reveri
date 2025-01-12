@@ -2,6 +2,8 @@
 
 A high-performance Reversi (Othello) game engine implemented in Rust with Python bindings. This library provides a fast and efficient Reversi implementation by leveraging Rust's performance while maintaining a friendly Python interface.
 
+Core implementation is based on [rust_reversi_core](https://github.com/neodymium6/rust_reversi_core).
+
 ## Features
 
 - High-performance implementation in Rust

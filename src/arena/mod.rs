@@ -1,12 +1,10 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 
-mod core;
-mod error;
-mod local;
-mod network;
-use error::{ArenaError, ClientManagerError, NetworkArenaClientError, NetworkArenaServerError};
-use local::LocalArena as RustLocalArena;
-use network::{
+use rust_reversi_core::arena::LocalArena as RustLocalArena;
+use rust_reversi_core::arena::{
+    ArenaError, ClientManagerError, NetworkArenaClientError, NetworkArenaServerError,
+};
+use rust_reversi_core::arena::{
     NetworkArenaClient as RustNetworkArenaClient, NetworkArenaServer as RustNetworkArenaServer,
 };
 

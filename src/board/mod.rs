@@ -1,7 +1,8 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 
-pub(crate) mod core;
-use core::{Board as RustBoard, BoardError, Color as RustColor, Turn as RustTurn};
+use rust_reversi_core::board::{
+    Board as RustBoard, BoardError, Color as RustColor, Turn as RustTurn,
+};
 
 #[pyclass(eq)]
 #[derive(Clone, PartialEq)]

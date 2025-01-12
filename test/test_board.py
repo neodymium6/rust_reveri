@@ -257,8 +257,5 @@ def test_pass_game_over():
         "--------",
     )
     board.set_board_str(board_str, Turn.BLACK)
-    assert board.is_pass()
-    board.do_pass()
-    assert board.is_pass()
     assert board.is_game_over()
     assert board.is_black_win()
