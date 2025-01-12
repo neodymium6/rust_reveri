@@ -39,6 +39,46 @@ impl AlphaBetaSearch {
         None
     }
 
+    fn get_move_score(&mut self, board: &Board) -> i32 {
+        if let Some(entry) = self.tt.lookup(board) {
+            match entry.get_type() {
+                EntryType::Exact => return entry.get_score(),
+                EntryType::LowerBound => return entry.get_score(),
+                EntryType::UpperBound => {}
+            }
+        }
+        let score = self.evaluator.evaluate(board);
+        self.tt.store(board, 0, score, EntryType::Exact);
+        score
+    }
+
+    fn get_ordered_child_boards(&mut self, board: &Board) -> Option<Vec<Board>> {
+        if let Some(child_boars) = board.get_child_boards() {
+            let mut child_boards = child_boars
+                .into_iter()
+                .map(|b| (self.get_move_score(&b), b))
+                .collect::<Vec<_>>();
+            child_boards.sort_by_key(|(score, _)| -score);
+            Some(child_boards.into_iter().map(|(_, b)| b).collect())
+        } else {
+            None
+        }
+    }
+
+    fn get_ordered_move_board_pairs(&mut self, board: &Board) -> Vec<(usize, Board)> {
+        let moves = board.get_legal_moves_vec();
+        let mut move_board_pairs = moves
+            .into_iter()
+            .map(|m| {
+                let mut new_board = board.clone();
+                new_board.do_move(m).unwrap();
+                (m, new_board)
+            })
+            .collect::<Vec<_>>();
+        move_board_pairs.sort_by_key(|(_, b)| -self.get_move_score(b));
+        move_board_pairs
+    }
+
     fn get_search_score(&mut self, board: &Board, depth: usize, alpha: i32, beta: i32) -> i32 {
         if let Some(score) = self.tt_cutoff(board, depth, alpha, beta) {
             return score;
@@ -203,9 +243,10 @@ impl AlphaBetaSearch {
         let mut best_move = None;
         let mut alpha = i32::MIN + 1;
         let beta = i32::MAX - 1;
-        for move_i in board.get_legal_moves_vec() {
-            let mut new_board = board.clone();
-            new_board.do_move(move_i).unwrap();
+        // for move_i in board.get_legal_moves_vec() {
+        //     let mut new_board = board.clone();
+        //     new_board.do_move(move_i).unwrap();
+        for (move_i, new_board) in self.get_ordered_move_board_pairs(board) {
             let score =
                 -self.get_search_score_with_timeout(&new_board, depth, -beta, -alpha, time_keeper);
             if time_keeper.is_timeout() {
