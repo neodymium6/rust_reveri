@@ -441,22 +441,22 @@ The library uses bitboard representation and efficient algorithms for:
 
 ## Benchmark Results
 
-Benchmark history from 2024-12-15 to 2024-12-22
+Benchmark history from 2024-12-15 to 2025-01-24
 
 ### Summary
 
 | Test | Current | Min (Historical) | Max (Historical) | Trend |
 |------|---------|-----------------|------------------|-------|
-| Random 1000Games | 21.89ms | 21.26ms | 23.45ms | 📉 Declined |
-| Perft 8 | 83.48ms | 79.81ms | 115.85ms | 📈 Improved |
-| Arena 1000Games | 1.31s | 870.07ms | 1.63s | 📈 Improved |
+| Random 1000Games | 17.27ms | 17.27ms | 23.45ms | 📈 Improved |
+| Perft 8 | 68.03ms | 68.03ms | 115.85ms | 📈 Improved |
+| Arena 1000Games | 1.01s | 870.07ms | 1.63s | 📈 Improved |
 
 ### Latest System Information
 
 - CPU: Apple M1
 - Architecture: arm64
 - Cores: 8
-- Python: 3.9.20
+- Python: 3.9.21
 
 ### Performance History
 
