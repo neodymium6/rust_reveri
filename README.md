@@ -154,7 +154,7 @@ def main():
     
     # Initialize evaluator and search
     evaluator = PieceEvaluator()
-    search = AlphaBetaSearch(evaluator, DEPTH)
+    search = AlphaBetaSearch(evaluator, DEPTH, win_score=1 << 10)
 
     while True:
         try:
@@ -319,6 +319,17 @@ Scores are calculated as product of matrix weights and board state. (player equa
 
 - `MatrixEvaluator(matrix: List[List[int])`: Creates a new matrix-based evaluator with given weights
 
+###### WinrateEvaluator Constructor
+
+- `WinrateEvaluator()`: Creates a new evaluator that predicts winrate.
+
+###### WinrateEvaluator Methods
+
+- `evaluate(board: Board) -> int`: Evaluates the given board state.
+override this method in subclasses to implement custom evaluation functions.
+
+- `set_py_evaluator(WinrateEvaluator) -> None`: Sets a Python evaluator class for evaluation
+
 ##### AlphaBetaSearch
 
 Alpha-beta pruning based search for finding best moves.
@@ -330,7 +341,20 @@ Alpha-beta pruning based search for finding best moves.
 ###### AlphaBetaSearch Methods
 
 - `get_move(board: Board) -> int`: Returns best move found within specified depth
-- `get_move_with_iter_deepening(board: Board, timeout_ms: int) -> int`: Returns best move found with iterative deepening up to timeout in milliseconds
+- `get_move_with_timeout(board: Board, timeout_ms: int) -> int`: Returns best move found with iterative deepening up to timeout in milliseconds
+- `get_search_score(board: Board) -> int`: Returns search score for current board state
+
+##### ThunderSearch
+
+###### ThunderSearch Constructor
+
+- `ThunderSearch(evaluator: WinrateEvaluator, n_playouts: int, epsilon: float)`: Creates a new search instance with given evaluator, number of playouts, and epsilon value
+
+###### ThunderSearch Methods
+
+- `get_move(board: Board) -> int`: Returns best move found within specified playouts
+- `get_move_with_timeout(board: Board, timeout_ms: int) -> int`: Returns best move found up to timeout in milliseconds
+- `get_search_score(board: Board) -> int`: Returns search score for current board state
 
 #### Arena Classes
 
