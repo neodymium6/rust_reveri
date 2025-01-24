@@ -10,7 +10,7 @@ def main():
     turn = Turn.BLACK if sys.argv[2] == "BLACK" else Turn.WHITE
     board = Board()
     evaluator = PieceEvaluator()
-    search = AlphaBetaSearch(evaluator, DEPTH)
+    search = AlphaBetaSearch(evaluator, DEPTH, 1 << 10)
 
     while True:
         try:

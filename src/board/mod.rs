@@ -162,23 +162,23 @@ impl Board {
         self.inner.diff_piece_num()
     }
 
-    fn get_legal_moves(&self) -> u64 {
+    fn get_legal_moves(&mut self) -> u64 {
         self.inner.get_legal_moves()
     }
 
-    fn get_legal_moves_vec(&self) -> Vec<usize> {
-        self.inner.get_legal_moves_vec()
+    fn get_legal_moves_vec(&mut self) -> Vec<usize> {
+        self.inner.get_legal_moves_vec().to_vec()
     }
 
-    fn get_legal_moves_tf(&self) -> Vec<bool> {
+    fn get_legal_moves_tf(&mut self) -> Vec<bool> {
         self.inner.get_legal_moves_tf()
     }
 
-    fn is_legal_move(&self, pos: usize) -> bool {
+    fn is_legal_move(&mut self, pos: usize) -> bool {
         self.inner.is_legal_move(pos)
     }
 
-    fn get_child_boards(&self) -> Option<Vec<Board>> {
+    fn get_child_boards(&mut self) -> Option<Vec<Board>> {
         self.inner.get_child_boards().map(|board_vec| {
             board_vec
                 .into_iter()
@@ -256,7 +256,7 @@ impl Board {
         }
     }
 
-    fn get_random_move(&self) -> PyResult<usize> {
+    fn get_random_move(&mut self) -> PyResult<usize> {
         self.inner.get_random_move().map_err(|e| match e {
             BoardError::NoLegalMove => PyValueError::new_err("No legal move"),
             _ => PyValueError::new_err("Unexpected error"),
