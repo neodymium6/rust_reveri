@@ -5,15 +5,26 @@ build-backend = "maturin"
 [project]
 name = "rust-reversi"
 requires-python = ">=3.8"
+description = "A Reversi/Othello engine implemented in Rust with Python bindings"
+authors = [{"name" = "neodymium6"}]
+readme = "README.md"
+license = {"text" = "MIT"}
+keywords = ["game", "reversi", "othello", "rust"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/neodymium6/rust_reversi"
+Repository = "https://github.com/neodymium6/rust_reversi.git"
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
-sdist-include = ["LICENSE.txt", "README.md", "docs/images/*"]
+sdist-include = ["LICENSE.txt", "README.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["test"]
 python_files = ["test_*.py"]
