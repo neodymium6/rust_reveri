@@ -7,7 +7,10 @@ mod arena;
 use arena::{Arena, NetworkArenaClient, NetworkArenaServer};
 
 mod search;
-use search::{AlphaBetaSearch, Evaluator, LegalNumEvaluator, MatrixEvaluator, PieceEvaluator};
+use search::{
+    AlphaBetaSearch, Evaluator, LegalNumEvaluator, MatrixEvaluator, PieceEvaluator, ThunderSearch,
+    WinrateEvaluator,
+};
 
 #[pymodule]
 fn rust_reversi(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -22,5 +25,7 @@ fn rust_reversi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<MatrixEvaluator>()?;
     m.add_class::<PieceEvaluator>()?;
     m.add_class::<Evaluator>()?;
+    m.add_class::<ThunderSearch>()?;
+    m.add_class::<WinrateEvaluator>()?;
     Ok(())
 }
