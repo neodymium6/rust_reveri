@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "rust_reversi"
-version = "1.4.2"
+version = "1.4.3"
 dependencies = [
  "pyo3",
  "rust_reversi_core",
