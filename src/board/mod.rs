@@ -82,6 +82,12 @@ impl Board {
         (player_board, opponent_board, Turn { inner: turn })
     }
 
+    fn get_turn(&self) -> Turn {
+        Turn {
+            inner: self.inner.get_turn(),
+        }
+    }
+
     fn set_board(&mut self, player_board: u64, opponent_board: u64, turn: Turn) {
         self.inner
             .set_board(player_board, opponent_board, turn.inner);
