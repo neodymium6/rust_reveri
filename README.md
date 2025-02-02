@@ -356,6 +356,23 @@ Alpha-beta pruning based search for finding best moves.
 - `get_move_with_timeout(board: Board, timeout_ms: int) -> int`: Returns best move found up to timeout in milliseconds
 - `get_search_score(board: Board) -> int`: Returns search score for current board state
 
+##### MctsSearch
+
+Monte Carlo Tree Search for finding best moves.
+
+###### MctsSearch Constructor
+
+- `MctsSearch(n_playouts: int, c: float, expand_threshold: int)`: Creates a new search instance with given number of playouts, exploration constant, and expand threshold
+
+c is the exploration constant for UCB1 formula. 1.0 is a common value.
+expand_threshold is the number of visits required to expand a node. 10 is a common value.
+
+###### MctsSearch Methods
+
+- `get_move(board: Board) -> int`: Returns best move found within specified playouts
+- `get_move_with_timeout(board: Board, timeout_ms: int) -> int`: Returns best move found up to timeout in milliseconds
+- `get_search_score(board: Board) -> int`: Returns search score for current board state
+
 #### Arena Classes
 
 ##### Local Arena
