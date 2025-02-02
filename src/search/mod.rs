@@ -10,7 +10,8 @@ use rust_reversi_core::search::{
 use rust_reversi_core::search::{
     BitMatrixEvaluator as RustBitMatrixEvaluator, Evaluator as RustEvaluator,
     LegalNumEvaluator as RustLegalNumEvaluator, MatrixEvaluator as RustMatrixEvaluator,
-    PieceEvaluator as RustPieceEvaluator, WinrateEvaluator as RustWinrateEvaluator,
+    MctsSearch as RustMctsSearch, PieceEvaluator as RustPieceEvaluator,
+    WinrateEvaluator as RustWinrateEvaluator,
 };
 
 #[derive(Clone, Debug)]
@@ -266,6 +267,34 @@ impl ThunderSearch {
         let rust_evaluator = evaluator.inner;
         ThunderSearch {
             inner: RustThunderSearch::new(n_playouts, epsilon, rust_evaluator.as_evaluator()),
+        }
+    }
+
+    fn get_move(&self, board: &mut Board) -> Option<usize> {
+        self.inner.get_move(&mut board.inner)
+    }
+
+    fn get_move_with_timeout(&self, board: &mut Board, timeout_ms: u64) -> Option<usize> {
+        let timeout = std::time::Duration::from_millis(timeout_ms);
+        self.inner.get_move_with_timeout(&mut board.inner, timeout)
+    }
+
+    fn get_search_score(&self, board: &mut Board) -> f64 {
+        self.inner.get_search_score(&mut board.inner)
+    }
+}
+
+#[pyclass]
+pub struct MctsSearch {
+    inner: RustMctsSearch,
+}
+
+#[pymethods]
+impl MctsSearch {
+    #[new]
+    fn new(n_playouts: usize, c: f64, expand_threshold: usize) -> Self {
+        MctsSearch {
+            inner: RustMctsSearch::new(n_playouts, c, expand_threshold),
         }
     }
 
